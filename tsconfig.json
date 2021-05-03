@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "strictFunctionTypes": false,
+    "lib": [
+      "es2015"
+    ],
+    "jsx": "react",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": false,
+    "declaration": true,
+    "sourceMap": true
+  },
+  "exclude": ["../../node_modules/*", "./node_modules/*", "./dist"]
+}

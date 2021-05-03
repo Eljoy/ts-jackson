@@ -1,0 +1,65 @@
+{
+  "env": {
+    "browser": false,
+    "commonjs": true,
+    "es6": true,
+    "jest": true
+  },
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended"
+  ],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true,
+      "jsx": true
+    },
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "react",
+    "react-hooks"
+  ],
+  "settings": {
+    "react": {
+      "version": "latest"
+    }
+  },
+  "rules": {
+    "react/prop-types": 0,
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "off",
+    "no-use-before-define": 0,
+    "prefer-const": 0,
+    "no-unused-vars": 0,
+    "no-unused-expressions": 0,
+    "no-undef": 0,
+    "camelcase": 0,
+    "react/display-name": 0,
+    "@typescript-eslint/no-use-before-define": 0,
+    "@typescript-eslint/no-unused-vars":0,
+    "@typescript-eslint/no-unused-expressions": 1,
+    "@typescript-eslint/ban-ts-comment": 1,
+    "@typescript-eslint/class-name-casing": 0,
+    "@typescript-eslint/explicit-function-return-type": 0,
+    "@typescript-eslint/camelcase": 0,
+    "@typescript-eslint/no-empty-function": 0,
+    "@typescript-eslint/no-var-requires": 0
+  },
+  "overrides": [
+    {
+      "files": "*-test.*",
+      "rules": {
+        "@typescript-eslint/no-var-requires": 0
+      }
+    }
+  ],
+  "parser": "@typescript-eslint/parser",
+  "globals": {
+    "fetch": false,
+    "__DEV__": false,
+    "ErrorUtils": false,
+    "globalThis": true
+  }
+}
