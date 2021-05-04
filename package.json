@@ -1,7 +1,7 @@
 {
   "name": "ts-jackson",
   "version": "1.0.0",
-  "author": "I.Gazdaliev",
+  "author": "Ilias Gazdaliev",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -42,14 +42,12 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged --allow-empty",
-      "pre-push": "npm run test"
+      "pre-commit": "lint-staged --allow-empty"
     }
   },
   "lint-staged": {
     "*/**/*.{ts}": [
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   }
 }
