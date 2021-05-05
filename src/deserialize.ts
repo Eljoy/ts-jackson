@@ -45,10 +45,10 @@ export default function deserialize<T, U extends Array<unknown>>(
 
 function deserializeProperty(
   value: unknown,
-  toType: JsonPropertyMetadata['type'],
-  arrayValueType: JsonPropertyMetadata['arrayValueType']
+  arrayValueType: JsonPropertyMetadata['arrayValueType'],
+  toType?: JsonPropertyMetadata['type']
 ) {
-  switch (toType.name) {
+  switch (toType?.name) {
     case Types.Date: {
       return Date.parse(value as string)
     }
