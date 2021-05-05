@@ -9,10 +9,10 @@ import {
 import assertSerializable from './common/assertSerializable'
 import { JsonPropertyMetadata } from './JsonProperty'
 
-export default function deserialize<T>(
+export default function deserialize<T, U extends Array<unknown>>(
   json: Record<string, unknown>,
-  serializableClass: new (...params: Array<unknown>) => T,
-  ...args: Array<unknown>
+  serializableClass: new (...params: [...U]) => T,
+  ...args: U
 ): T {
   const propsMetadata: Record<
     string,
