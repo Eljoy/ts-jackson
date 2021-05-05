@@ -4,7 +4,6 @@ import { ReflectMetaDataKeys } from './common'
 type Params = {
   path?: string
   required?: boolean
-  afterSerialize?: (value: unknown) => unknown
   arrayValueType?: new (...params: Array<unknown>) => unknown
 }
 
@@ -15,10 +14,16 @@ export type JsonPropertyMetadata = {
 } & Params
 
 export default function JsonProperty(
-  params: Params = {}
+  arg: Params | string = {}
 ): (object: Object, propertyName: string) => void {
   return function (object, propertyName) {
     const type = Reflect.getMetadata('design:type', object, propertyName)
+    const params: Params =
+      typeof arg !== 'string'
+        ? arg
+        : {
+            path: arg,
+          }
     const commonMetadata: Record<string, JsonPropertyMetadata> =
       Reflect.getMetadata(
         ReflectMetaDataKeys.TsJacksonJsonProperty,
