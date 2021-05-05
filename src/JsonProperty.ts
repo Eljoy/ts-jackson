@@ -4,14 +4,15 @@ import { ReflectMetaDataKeys } from './common'
 type Params = {
   path?: string
   required?: boolean
-  afterSerialize?: (value: any) => any
+  afterSerialize?: (value: unknown) => unknown
+  arrayValueType?: new (...params: Array<unknown>) => unknown
 }
 
 export type JsonPropertyMetadata = {
   name: string
   path: string
-  type: string
-}
+  type: new (...params: Array<unknown>) => unknown
+} & Params
 
 export default function JsonProperty(
   params: Params = {}
@@ -19,16 +20,18 @@ export default function JsonProperty(
   return function (object, propertyName) {
     const type = Reflect.getMetadata('design:type', object, propertyName)
     const commonMetadata: Record<string, JsonPropertyMetadata> =
-      Reflect.getMetadata(ReflectMetaDataKeys.TsJackson, object.constructor) ||
-      {}
+      Reflect.getMetadata(
+        ReflectMetaDataKeys.TsJacksonJsonProperty,
+        object.constructor
+      ) || {}
     commonMetadata[propertyName] = {
-      type: type.name,
+      type,
       name: propertyName,
       path: propertyName,
       ...params,
     }
     Reflect.defineMetadata(
-      ReflectMetaDataKeys.TsJackson,
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
       commonMetadata,
       object.constructor
     )

@@ -1,12 +1,12 @@
 import { get, set } from 'lodash'
 import 'reflect-metadata'
 import {
+  assertSerializable,
   checkSerializable,
-  parse,
   ReflectMetaDataKeys,
   RequiredPropertyError,
+  Types,
 } from './common'
-import assertSerializable from './common/assertSerializable'
 import { JsonPropertyMetadata } from './JsonProperty'
 
 export default function deserialize<T, U extends Array<unknown>>(
@@ -14,11 +14,14 @@ export default function deserialize<T, U extends Array<unknown>>(
   serializableClass: new (...params: [...U]) => T,
   ...args: U
 ): T {
+  assertSerializable(serializableClass)
   const propsMetadata: Record<
     string,
     JsonPropertyMetadata
-  > = Reflect.getMetadata(ReflectMetaDataKeys.TsJackson, serializableClass)
-  assertSerializable(serializableClass)
+  > = Reflect.getMetadata(
+    ReflectMetaDataKeys.TsJacksonJsonProperty,
+    serializableClass
+  )
   const result = new serializableClass(...args)
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
     const jsonValue = get(json, propParams.path)
@@ -30,11 +33,41 @@ export default function deserialize<T, U extends Array<unknown>>(
         propPath: propParams.path,
       })
     }
-    const isSerializable = checkSerializable(propParams.type)
-    const parsedValue = isSerializable
-      ? deserialize(jsonValue, propParams.type)
-      : parse(jsonValue, propParams.type)
-    set(result, propName, parsedValue)
+    const deserializedValue = deserializeProperty(
+      jsonValue,
+      propParams.type,
+      propParams.arrayValueType
+    )
+    set(result, propName, deserializedValue)
   }
   return result
+}
+
+function deserializeProperty(
+  value: unknown,
+  toType: JsonPropertyMetadata['type'],
+  arrayValueType: JsonPropertyMetadata['arrayValueType']
+) {
+  switch (toType.name) {
+    case Types.Date: {
+      return Date.parse(value as string)
+    }
+    case Types.Array: {
+      return (value as Record<string, unknown>[]).map((item) => {
+        const isSerializable = checkSerializable(arrayValueType)
+        return isSerializable ? deserialize(item, arrayValueType) : item
+      })
+    }
+    case Types.String:
+    case Types.Boolean:
+    case Types.Number: {
+      return value
+    }
+    default: {
+      const isSerializable = checkSerializable(toType)
+      return isSerializable
+        ? deserialize(value as Record<string, unknown>, toType)
+        : value
+    }
+  }
 }
