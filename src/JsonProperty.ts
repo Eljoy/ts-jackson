@@ -5,6 +5,7 @@ type Params = {
   path?: string
   required?: boolean
   arrayValueType?: new (...params: Array<unknown>) => unknown
+  validate?: (property: unknown) => boolean
 }
 
 export type JsonPropertyMetadata = {

@@ -56,4 +56,17 @@ describe('JsonProperty', () => {
       },
     })
   })
+
+  test('JsonProperty validate param', () => {
+    const validate = (foo: number) => foo > 5
+    class Class {
+      @JsonProperty({ validate })
+      foo: number
+    }
+    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      Class
+    )
+    expect(metaData).toHaveProperty('foo.validate', validate)
+  })
 })
