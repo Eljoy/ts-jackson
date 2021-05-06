@@ -58,7 +58,10 @@ function deserializeProperty(
   toType: JsonPropertyMetadata['type'],
   arrayValueType: JsonPropertyMetadata['arrayValueType']
 ) {
-  switch (toType.name) {
+  if (value === undefined) {
+    return value
+  }
+  switch (toType?.name) {
     case Types.Date: {
       return Date.parse(value as string)
     }
@@ -68,9 +71,13 @@ function deserializeProperty(
         return isSerializable ? deserialize(item, arrayValueType) : item
       })
     }
-    case Types.String:
-    case Types.Boolean:
+    case Types.Boolean: {
+      return Boolean(value)
+    }
     case Types.Number: {
+      return Number.parseInt(value as string)
+    }
+    case Types.String: {
       return value
     }
     default: {
