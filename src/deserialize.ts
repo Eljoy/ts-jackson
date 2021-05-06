@@ -48,7 +48,9 @@ export default function deserialize<T, U extends Array<unknown>>(
         validate: propParams.validate,
         serializableClass,
       })
-    set(result, propName, deserializedValue)
+    if (deserializedValue !== undefined) {
+      set(result, propName, deserializedValue)
+    }
   }
   return result
 }
