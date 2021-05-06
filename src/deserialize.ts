@@ -1,13 +1,13 @@
 import { get, set } from 'lodash'
 import 'reflect-metadata'
 import {
+  assertRequired,
   assertSerializable,
+  assertValid,
   checkSerializable,
   ReflectMetaDataKeys,
-  RequiredPropertyError,
   Types,
 } from './common'
-import assertValid from './common/assertValid'
 import { JsonPropertyMetadata } from './JsonProperty'
 
 export default function deserialize<T, U extends Array<unknown>>(
@@ -26,14 +26,14 @@ export default function deserialize<T, U extends Array<unknown>>(
   const result = new serializableClass(...args)
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
     const jsonValue = get(json, propParams.path)
-    if (propParams.required && jsonValue === undefined) {
-      throw new RequiredPropertyError({
+    propParams.required &&
+      assertRequired({
         json,
         propName,
+        propValue: jsonValue,
         serializableClass,
         propPath: propParams.path,
       })
-    }
     const deserializedValue = deserializeProperty(
       jsonValue,
       propParams.type,
