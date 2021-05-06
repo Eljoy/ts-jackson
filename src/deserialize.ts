@@ -34,11 +34,13 @@ export default function deserialize<T, U extends Array<unknown>>(
         serializableClass,
         propPath: propParams.path,
       })
-    const deserializedValue = deserializeProperty(
-      jsonValue,
-      propParams.type,
-      propParams.arrayValueType
-    )
+    const deserializedValue = propParams.deserialize
+      ? propParams.deserialize(jsonValue)
+      : deserializeProperty(
+          jsonValue,
+          propParams.type,
+          propParams.arrayValueType
+        )
     propParams.validate &&
       assertValid({
         propName,
