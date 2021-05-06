@@ -7,6 +7,7 @@ import {
   RequiredPropertyError,
   Types,
 } from './common'
+import assertValid from './common/assertValid'
 import { JsonPropertyMetadata } from './JsonProperty'
 
 export default function deserialize<T, U extends Array<unknown>>(
@@ -38,6 +39,13 @@ export default function deserialize<T, U extends Array<unknown>>(
       propParams.type,
       propParams.arrayValueType
     )
+    propParams.validate &&
+      assertValid({
+        propName,
+        propValue: deserializedValue,
+        validate: propParams.validate,
+        serializableClass,
+      })
     set(result, propName, deserializedValue)
   }
   return result
@@ -45,10 +53,10 @@ export default function deserialize<T, U extends Array<unknown>>(
 
 function deserializeProperty(
   value: unknown,
-  arrayValueType: JsonPropertyMetadata['arrayValueType'],
-  toType?: JsonPropertyMetadata['type']
+  toType: JsonPropertyMetadata['type'],
+  arrayValueType: JsonPropertyMetadata['arrayValueType']
 ) {
-  switch (toType?.name) {
+  switch (toType.name) {
     case Types.Date: {
       return Date.parse(value as string)
     }

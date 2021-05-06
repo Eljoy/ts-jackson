@@ -1,31 +1,31 @@
 import 'reflect-metadata'
 import { ReflectMetaDataKeys } from './common'
 
-type Params = {
+type Params<P> = {
   path?: string
   required?: boolean
   arrayValueType?: new (...params: Array<unknown>) => unknown
-  validate?: (property: unknown) => boolean
+  validate?: (property: P) => boolean
 }
 
-export type JsonPropertyMetadata = {
+export type JsonPropertyMetadata<P = unknown> = {
   name: string
   path: string
   type: new (...params: Array<unknown>) => unknown
-} & Params
+} & Params<P>
 
-export default function JsonProperty(
-  arg: Params | string = {}
+export default function JsonProperty<P = unknown>(
+  arg: Params<P> | string = {}
 ): (object: Object, propertyName: string) => void {
   return function (object, propertyName) {
     const type = Reflect.getMetadata('design:type', object, propertyName)
-    const params: Params =
+    const params: Params<P> =
       typeof arg !== 'string'
         ? arg
         : {
             path: arg,
           }
-    const commonMetadata: Record<string, JsonPropertyMetadata> =
+    const commonMetadata: Record<string, JsonPropertyMetadata<P>> =
       Reflect.getMetadata(
         ReflectMetaDataKeys.TsJacksonJsonProperty,
         object.constructor
