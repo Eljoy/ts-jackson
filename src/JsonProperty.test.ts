@@ -69,4 +69,22 @@ describe('JsonProperty', () => {
     )
     expect(metaData).toHaveProperty('foo.validate', validate)
   })
+
+  test('JsonProperty with type provided as a param', () => {
+    class Class {
+      @JsonProperty({ type: Array })
+      foo: number
+    }
+    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      Class
+    )
+    expect(metaData).toMatchObject({
+      foo: {
+        name: 'foo',
+        path: 'foo',
+        type: Array,
+      },
+    })
+  })
 })
