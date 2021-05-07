@@ -135,36 +135,6 @@ describe('deserialize', () => {
     expect(deserialize(json, Owner)).toStrictEqual(expected)
   })
 
-  test.skip('Class with one to one relation undefined', () => {
-    @Serializable()
-    class Owner {
-      @JsonProperty()
-      name: string
-
-      @JsonProperty()
-      dog: Dog
-    }
-
-    @Serializable()
-    class Dog {
-      @JsonProperty()
-      name: string
-    }
-    const json = {
-      name: 'Shaggy',
-      dog: {
-        name: 'Scooby Doo',
-      },
-    }
-    const dog = new Dog()
-    dog.name = json.dog.name
-
-    const expected = new Owner()
-    expected.dog = dog
-    expected.name = json.name
-    expect(deserialize(json, Owner)).toStrictEqual(expected)
-  })
-
   test('Class with one to many relation', () => {
     @Serializable()
     class Dog {
