@@ -28,6 +28,9 @@
   ],
   "homepage": "https://github.com/Eljoy/ts-jackson#readme",
   "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "eslint": "^7.25.0",
+    "eslint-plugin-react": "^7.23.2",
     "lodash": "^4.17.21",
     "reflect-metadata": "^0.1.13"
   },
@@ -43,12 +46,14 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged --allow-empty"
+      "pre-commit": "lint-staged --allow-empty",
+      "pre-push": "tsc && jest"
     }
   },
   "lint-staged": {
     "src/**/*.ts": [
       "prettier --write",
+      "eslint --fix",
       "git add"
     ]
   }
