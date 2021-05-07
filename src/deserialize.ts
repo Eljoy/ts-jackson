@@ -69,6 +69,13 @@ function deserializeProperty(
         return isSerializable ? deserialize(item, elementType) : item
       })
     }
+    case Types.Set: {
+      const values = (value as Record<string, unknown>[]).map((item) => {
+        const isSerializable = checkSerializable(elementType)
+        return isSerializable ? deserialize(item, elementType) : item
+      })
+      return new Set(values)
+    }
     case Types.Boolean: {
       return Boolean(value)
     }

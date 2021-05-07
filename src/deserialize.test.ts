@@ -203,6 +203,44 @@ describe('deserialize', () => {
     expect(deserialize(json, Owner)).toStrictEqual(expected)
   })
 
+  test('"Set" property type', () => {
+    @Serializable()
+    class Dog {
+      @JsonProperty()
+      name: string
+    }
+
+    @Serializable()
+    class Owner {
+      @JsonProperty()
+      name: string
+
+      @JsonProperty({ elementType: Dog })
+      dogs: Set<Dog>
+    }
+    const json = {
+      name: 'Shaggy',
+      dogs: [
+        {
+          name: 'Scooby Doo',
+        },
+        {
+          name: 'Scrappy Doo',
+        },
+      ],
+    }
+    const scoobyDoo = new Dog()
+    scoobyDoo.name = json.dogs[0].name
+
+    const scrappyDoo = new Dog()
+    scrappyDoo.name = json.dogs[1].name
+
+    const expected = new Owner()
+    expected.dogs = new Set([scoobyDoo, scrappyDoo])
+    expected.name = json.name
+    expect(deserialize(json, Owner)).toStrictEqual(expected)
+  })
+
   describe('Inheritance', () => {
     @Serializable()
     class Profile {
