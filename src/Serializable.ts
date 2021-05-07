@@ -1,13 +1,19 @@
 import 'reflect-metadata'
 import { ReflectMetaDataKeys } from './common'
 
-type SerializableOptions = {}
+type Params = {}
 
-export default function Serializable(): (target: Object) => void {
+export type SerializableMetadata = {
+  className: string
+} & Params
+
+export default function Serializable(): (
+  target: new (...params: Array<unknown>) => unknown
+) => void {
   return (target) => {
     Reflect.defineMetadata(
       ReflectMetaDataKeys.TsJacksonSerializable,
-      { className: target.constructor.name },
+      { className: target.name },
       target
     )
   }
