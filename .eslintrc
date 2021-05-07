@@ -6,8 +6,7 @@
     "jest": true
   },
   "extends": [
-    "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended"
+    "plugin:@typescript-eslint/recommended"
   ],
   "parserOptions": {
     "ecmaFeatures": {
@@ -17,41 +16,34 @@
     "sourceType": "module"
   },
   "plugins": [
-    "@typescript-eslint",
-    "react",
-    "react-hooks"
+    "@typescript-eslint"
   ],
   "settings": {
-    "react": {
-      "version": "latest"
-    }
   },
   "rules": {
-    "react/prop-types": 0,
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "off",
-    "no-use-before-define": 0,
-    "prefer-const": 0,
-    "no-unused-vars": 0,
-    "no-unused-expressions": 0,
-    "no-undef": 0,
-    "camelcase": 0,
-    "react/display-name": 0,
-    "@typescript-eslint/no-use-before-define": 0,
-    "@typescript-eslint/no-unused-vars":0,
-    "@typescript-eslint/no-unused-expressions": 1,
-    "@typescript-eslint/ban-ts-comment": 1,
-    "@typescript-eslint/class-name-casing": 0,
-    "@typescript-eslint/explicit-function-return-type": 0,
-    "@typescript-eslint/camelcase": 0,
-    "@typescript-eslint/no-empty-function": 0,
-    "@typescript-eslint/no-var-requires": 0
+    "no-use-before-define": "off",
+    "prefer-const": "off",
+    "no-unused-vars": "off",
+    "no-unused-expressions": "off",
+    "no-undef": "off",
+    "camelcase": "off",
+    "no-debugger": "error",
+    "@typescript-eslint/no-use-before-define": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-unused-expressions": "off",
+    "@typescript-eslint/ban-ts-comment": "error",
+    "@typescript-eslint/class-name-casing": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/camelcase": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/ban-types": "off"
   },
   "overrides": [
     {
       "files": "*-test.*",
       "rules": {
-        "@typescript-eslint/no-var-requires": 0
+        "@typescript-eslint/no-var-requires": "off"
       }
     }
   ],
