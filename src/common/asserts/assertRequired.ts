@@ -1,4 +1,4 @@
-import { RequiredPropertyError } from './index'
+import { RequiredPropertyError } from '../index'
 
 type Params = {
   propName: string

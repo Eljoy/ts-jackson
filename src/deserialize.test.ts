@@ -1,6 +1,9 @@
 import { inRange } from 'lodash'
-import { RequiredPropertyError, ValidatePropertyError } from './common'
-import SerializableError from './common/SerializableError'
+import {
+  RequiredPropertyError,
+  SerializableError,
+  ValidatePropertyError,
+} from './common'
 import deserialize from './deserialize'
 import JsonProperty from './JsonProperty'
 import Serializable from './Serializable'

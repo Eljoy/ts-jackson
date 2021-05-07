@@ -1,11 +1,10 @@
-import { ValidatePropertyError } from './index'
-import { ConstructorType } from './types.d'
+import { ValidatePropertyError } from '../index'
 
 type Params = {
   propName: string
   propValue: unknown
   validate: (property: unknown) => boolean
-  serializableClass: ConstructorType
+  serializableClass: new (...params: Array<unknown>) => unknown
 }
 
 export default function assertValid({

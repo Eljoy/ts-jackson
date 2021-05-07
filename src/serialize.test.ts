@@ -1,5 +1,5 @@
 import { Serializable, serialize } from '../index'
-import SerializableError from './common/SerializableError'
+import { SerializableError } from './common'
 import JsonProperty from './JsonProperty'
 
 describe('serialize', () => {

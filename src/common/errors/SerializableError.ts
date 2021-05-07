@@ -1,4 +1,4 @@
-import Serializable from '../Serializable'
+import Serializable from '../../Serializable'
 
 export default class SerializableError extends Error {
   constructor(target: (new (...args: unknown[]) => unknown) | Function) {
