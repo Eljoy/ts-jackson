@@ -23,7 +23,7 @@ export default function serialize<
     const serializedProperty = serializeProperty(
       instance[propName],
       propParams.type,
-      propParams.arrayValueType
+      propParams.elementType
     )
     set(json, propParams.path, serializedProperty)
   }
@@ -33,7 +33,7 @@ export default function serialize<
 function serializeProperty(
   value: unknown,
   type: JsonPropertyMetadata['type'],
-  arrayValueType: JsonPropertyMetadata['arrayValueType']
+  elementType: JsonPropertyMetadata['elementType']
 ) {
   if (value === undefined) {
     return value
@@ -41,14 +41,14 @@ function serializeProperty(
   switch (type?.name) {
     case Types.Array: {
       return (value as Record<string, unknown>[]).map((item) => {
-        const isSerializable = checkSerializable(arrayValueType)
+        const isSerializable = checkSerializable(elementType)
         return isSerializable ? serialize(item) : item
       })
     }
     case Types.Set: {
       return Array.from((value as Set<Record<string, unknown>>).values()).map(
         (item) => {
-          const isSerializable = checkSerializable(arrayValueType)
+          const isSerializable = checkSerializable(elementType)
           return isSerializable ? serialize(item) : item
         }
       )

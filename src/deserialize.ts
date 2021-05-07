@@ -36,11 +36,7 @@ export default function deserialize<T, U extends Array<unknown>>(
       })
     const deserializedValue = propParams.deserialize
       ? propParams.deserialize(jsonValue)
-      : deserializeProperty(
-          jsonValue,
-          propParams.type,
-          propParams.arrayValueType
-        )
+      : deserializeProperty(jsonValue, propParams.type, propParams.elementType)
     propParams.validate &&
       assertValid({
         propName,
@@ -58,7 +54,7 @@ export default function deserialize<T, U extends Array<unknown>>(
 function deserializeProperty(
   value: unknown,
   toType: JsonPropertyMetadata['type'],
-  arrayValueType: JsonPropertyMetadata['arrayValueType']
+  elementType: JsonPropertyMetadata['elementType']
 ) {
   if (value === undefined) {
     return value
@@ -69,8 +65,8 @@ function deserializeProperty(
     }
     case Types.Array: {
       return (value as Record<string, unknown>[]).map((item) => {
-        const isSerializable = checkSerializable(arrayValueType)
-        return isSerializable ? deserialize(item, arrayValueType) : item
+        const isSerializable = checkSerializable(elementType)
+        return isSerializable ? deserialize(item, elementType) : item
       })
     }
     case Types.Boolean: {

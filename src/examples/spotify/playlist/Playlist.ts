@@ -19,7 +19,7 @@ export default class Playlist extends Entity {
   @JsonProperty('images[0]')
   readonly backgroundImage: Image
 
-  @JsonProperty({ required: true, path: 'tracks.items', arrayValueType: Track })
+  @JsonProperty({ required: true, path: 'tracks.items', elementType: Track })
   readonly tracks: Track[]
 
   static deserialize(playlistJson: Record<string, unknown>): Playlist {

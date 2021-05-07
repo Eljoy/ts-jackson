@@ -119,7 +119,7 @@ describe('serialize', () => {
       @JsonProperty()
       name
 
-      @JsonProperty({ arrayValueType: Dog })
+      @JsonProperty({ elementType: Dog })
       dogs: Dog[]
     }
     const json = {
@@ -157,7 +157,7 @@ describe('serialize', () => {
       @JsonProperty()
       name
 
-      @JsonProperty({ arrayValueType: Dog })
+      @JsonProperty({ elementType: Dog })
       dogs: Set<Dog>
     }
     const json = {
