@@ -1,3 +1,6 @@
+/**
+ * @author Ilias Gazdaliev <invimind@gmail.com>
+ */
 import 'reflect-metadata'
 import { ReflectMetaDataKeys } from './common'
 
@@ -7,6 +10,11 @@ export type SerializableMetadata = {
   className: string
 } & Params
 
+/**
+ * Decorator for marking serializable classes
+ *
+ * @returns {Record<string, unknown>} json
+ */
 export default function Serializable(): (
   target: new (...params: Array<unknown>) => unknown
 ) => void {

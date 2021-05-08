@@ -1,3 +1,6 @@
+/**
+ * @author Ilias Gazdaliev <invimind@gmail.com>
+ */
 import { set } from 'lodash'
 import {
   assertSerializable,
@@ -7,6 +10,12 @@ import {
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
 
+/**
+ * Function to serialize Serializable class to json
+ *
+ * @param {Function} instance serializable instance
+ * @returns {Record<string, unknown>} json
+ */
 export default function serialize<
   T extends new (...args: unknown[]) => unknown
 >(instance: InstanceType<T>): Record<string, unknown> {

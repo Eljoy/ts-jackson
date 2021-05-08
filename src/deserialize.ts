@@ -1,3 +1,6 @@
+/**
+ * @author Ilias Gazdaliev <invimind@gmail.com>
+ */
 import { get, set } from 'lodash'
 import 'reflect-metadata'
 import {
@@ -10,6 +13,15 @@ import {
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
 
+/**
+ * Function to deserialize json to Serializable class
+ *
+ * @param {Record<string, unknown>} json
+ * @param serializableClass Class to which json should be serialized
+ * @param args an arguments to be provided to constructor.
+ * For example Cat(readonly name, readonly color)
+ * deserialize({}, Cat, 'Moon', 'black')
+ */
 export default function deserialize<T, U extends Array<unknown>>(
   json: Record<string, unknown>,
   serializableClass: new (...params: [...U]) => T,
