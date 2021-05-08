@@ -8,6 +8,7 @@ type Params<P> = {
   elementType?: new (...params: Array<unknown>) => unknown
   validate?: (property: P) => boolean
   deserialize?: (jsonValue: unknown) => P
+  serialize?: (property: P) => unknown
 }
 
 export type JsonPropertyMetadata<P = unknown> = {

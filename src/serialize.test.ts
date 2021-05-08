@@ -78,6 +78,29 @@ describe('serialize', () => {
     })
   })
 
+  test('custom serialize param', () => {
+    @Serializable()
+    class Class {
+      @JsonProperty<string>({
+        serialize: (fullName) => {
+          const [name, surname] = fullName.split(' ')
+          return {
+            name,
+            surname,
+          }
+        },
+      })
+      fullName = 'Jack Johns'
+    }
+
+    expect(serialize(new Class())).toEqual({
+      fullName: {
+        name: 'Jack',
+        surname: 'Johns',
+      },
+    })
+  })
+
   test('one to one relation', () => {
     const json = {
       name: 'Shaggy',

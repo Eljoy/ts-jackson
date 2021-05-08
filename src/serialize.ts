@@ -20,11 +20,13 @@ export default function serialize<
   )
   const json = {}
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    const serializedProperty = serializeProperty(
-      instance[propName],
-      propParams.type,
-      propParams.elementType
-    )
+    const serializedProperty = propParams.serialize
+      ? propParams.serialize(instance[propName])
+      : serializeProperty(
+          instance[propName],
+          propParams.type,
+          propParams.elementType
+        )
     set(json, propParams.path, serializedProperty)
   }
   return json
