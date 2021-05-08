@@ -1,3 +1,4 @@
+import { serialize } from '../../../../index'
 import Image from '../image/Image'
 import PlaylistPreview from './PlaylistPreview'
 
@@ -31,7 +32,7 @@ describe('PlaylistPreview Entity', () => {
     expect(() => PlaylistPreview.deserialize({})).toThrow()
   })
 
-  it('should correctly deserialize object', () => {
+  test('deserialize', () => {
     const playlistPreview = PlaylistPreview.deserialize(testPlaylistJson)
     expect(playlistPreview).toMatchObject({
       id: testPlaylistJson.id,
@@ -46,5 +47,20 @@ describe('PlaylistPreview Entity', () => {
     })
     expect(playlistPreview instanceof PlaylistPreview).toBeTruthy()
     expect(playlistPreview.backgroundImage instanceof Image).toBeTruthy()
+  })
+
+  test('serialize', () => {
+    const playlistPreview = PlaylistPreview.deserialize(testPlaylistJson)
+    expect(serialize(playlistPreview)).toEqual({
+      id: testPlaylistJson.id,
+      name: testPlaylistJson.name,
+      description: testPlaylistJson.description,
+      href: testPlaylistJson.href,
+      images: [serialize(playlistPreview.backgroundImage)],
+      tracks: {
+        href: testPlaylistJson.tracks.href,
+        total: testPlaylistJson.tracks.total,
+      },
+    } as Partial<typeof testPlaylistJson>)
   })
 })

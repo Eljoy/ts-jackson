@@ -1,6 +1,7 @@
-import { deserialize, JsonProperty } from '../../../../index'
+import { deserialize, JsonProperty, Serializable } from '../../../../index'
 import Entity from '../Entity'
 
+@Serializable()
 export default class Artist extends Entity {
   @JsonProperty()
   readonly id: string

@@ -1,3 +1,4 @@
+import { serialize } from '../../../../index'
 import Image from '../image/Image'
 import Track from '../track/Track'
 import Playlist from './Playlist'
@@ -148,7 +149,7 @@ const testPlaylistJson = {
 }
 
 describe('Playlist Entity', () => {
-  it('should properly deserialize PlaylistDAO', () => {
+  test('deserialize', () => {
     const playlist = Playlist.deserialize(testPlaylistJson)
     expect(playlist).toMatchObject({
       id: testPlaylistJson.id,
@@ -163,5 +164,22 @@ describe('Playlist Entity', () => {
     expect(playlist instanceof Playlist).toBeTruthy()
     expect(playlist.icon instanceof Image).toBeTruthy()
     expect(playlist.backgroundImage instanceof Image).toBeTruthy()
+  })
+
+  test('serialize', () => {
+    const playlist = Playlist.deserialize(testPlaylistJson)
+    expect(serialize(playlist)).toEqual({
+      id: playlist.id,
+      name: playlist.name,
+      description: playlist.description,
+      images: [
+        serialize(playlist.backgroundImage),
+        undefined,
+        serialize(playlist.icon),
+      ],
+      tracks: {
+        items: playlist.tracks.map((track) => serialize(track)),
+      },
+    })
   })
 })

@@ -1,3 +1,4 @@
+import { serialize } from '../../../../index'
 import Artist from '../artist/Artist'
 import Image from '../image/Image'
 import Album from './Album'
@@ -52,7 +53,7 @@ describe('Album Entity', () => {
     expect(() => Album.deserialize({})).toThrow()
   })
 
-  it('should correctly deserialize object', () => {
+  test('deserialize', () => {
     const album = Album.deserialize(testAlbumJson)
     expect(album).toMatchObject({
       id: testAlbumJson.id,
@@ -67,5 +68,22 @@ describe('Album Entity', () => {
     expect(album instanceof Album).toBeTruthy()
     expect(album.backgroundImage instanceof Image).toBeTruthy()
     expect(album.icon instanceof Image).toBeTruthy()
+  })
+
+  test('serialize', () => {
+    const album = Album.deserialize(testAlbumJson)
+    expect(serialize(album)).toEqual({
+      id: album.id,
+      name: album.name,
+      total_tracks: album.totalTracks,
+      release_date: testAlbumJson.release_date,
+      artists: testAlbumJson.artists,
+      images: [
+        serialize(album.backgroundImage),
+        undefined,
+        serialize(album.icon),
+      ],
+      href: album.href,
+    } as Partial<typeof testAlbumJson>)
   })
 })

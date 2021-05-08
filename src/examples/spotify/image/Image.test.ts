@@ -1,3 +1,4 @@
+import { serialize } from '../../../../index'
 import Image from './Image'
 
 describe('Image Entity', () => {
@@ -5,27 +6,41 @@ describe('Image Entity', () => {
     expect(() => Image.deserialize({})).toThrow()
   })
 
-  it('should correctly deserialize to Image when proper data is provided', () => {
-    const imageData = {
+  test('deserialize', () => {
+    const imageJson = {
       height: '234',
       width: '123',
       url: 'http://localhost:8080',
     }
-    const image = Image.deserialize(imageData)
+    const image = Image.deserialize(imageJson)
     expect(image).toMatchObject({
-      height: parseInt(imageData.height),
-      width: parseInt(imageData.width),
-      url: imageData.url,
+      height: parseInt(imageJson.height),
+      width: parseInt(imageJson.width),
+      url: imageJson.url,
     })
   })
 
-  it('should omit unrequired field if those are not provided', () => {
-    const imageData = {
+  test('serialize', () => {
+    const imageJson = {
+      height: '234',
+      width: '123',
       url: 'http://localhost:8080',
     }
-    const image = Image.deserialize(imageData)
+    const image = Image.deserialize(imageJson)
+    expect(serialize(image)).toEqual({
+      height: parseInt(imageJson.height),
+      width: parseInt(imageJson.width),
+      url: imageJson.url,
+    })
+  })
+
+  it('should omit unrequited field if those are not provided', () => {
+    const imageJson = {
+      url: 'http://localhost:8080',
+    }
+    const image = Image.deserialize(imageJson)
     expect(image).toMatchObject({
-      url: imageData.url,
+      url: imageJson.url,
     })
   })
 })

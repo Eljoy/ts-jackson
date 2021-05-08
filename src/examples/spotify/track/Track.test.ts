@@ -1,3 +1,4 @@
+import { serialize } from '../../../../index'
 import { Album } from '../album'
 import Track from './Track'
 
@@ -117,7 +118,7 @@ describe('Track Entity', () => {
     expect(() => Track.deserialize({})).toThrow()
   })
 
-  it('should correctly deserialize object', () => {
+  test('deserialize', () => {
     const track = Track.deserialize(testTrackJson)
     expect(track).toMatchObject({
       id: testTrackJson.track.id,
@@ -129,5 +130,20 @@ describe('Track Entity', () => {
     })
     expect(track instanceof Track).toBeTruthy()
     expect(track.album instanceof Album).toBeTruthy()
+  })
+
+  test('serialize', () => {
+    const track = Track.deserialize(testTrackJson)
+    expect(serialize(track)).toEqual({
+      track: {
+        id: track.id,
+        href: track.href,
+        artists: track.artists as unknown[],
+        name: track.name,
+        album: serialize(track.album),
+        duration_ms: track.durationMs,
+        preview_url: track.previewUrl,
+      },
+    } as Partial<typeof testTrackJson>)
   })
 })
