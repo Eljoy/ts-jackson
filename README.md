@@ -2,6 +2,7 @@
 
 A typescript library to deserialize and serialize json into classes. You can use different path pattern
 to resolve deeply nested structures. Every path pattern provided by lodash/get|set object is supported.
+Check out [src/examples](https://github.com/Eljoy/ts-jackson/tree/main/src/examples/spotify) for examples.
 ## Installation
 
 ```sh
@@ -15,10 +16,10 @@ support for the decorators:
 ```json
 {
     "compilerOptions": {
-        ...
+        //...
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        ...
+        //...
     }
 }
 ```
