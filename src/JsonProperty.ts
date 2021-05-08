@@ -7,7 +7,7 @@ import { ReflectMetaDataKeys } from './common'
 /**
  * JsonProperty params
  *
- * @param {string} path -- path pattern for the required property
+ * @param {string} path -- path pattern for the property
  * supports every pattern provided by lodash/get|set object
  * @param {boolean} required throws an Error if json is missing required property
  * @param {Function} type Optional. In most cases there is no need to specify
