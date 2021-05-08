@@ -13,7 +13,7 @@ yarn add ts-jackson
 For tsconfig.json file set **experimentalDecorators** and **emitDecoratorMetadata** to true to allow
 support for the decorators:
 
-```json
+```javascript
 {
     "compilerOptions": {
         //...
@@ -29,7 +29,7 @@ import { JsonProperty, Serializable, deserialize, serialize } from 'typescript-j
 ```
 
 ## Api
-###Imports: 
+### Imports 
 ```typescript
 import { JsonProperty, Serializable, deserialize, serialize } from 'typescript-json-serializer';
 ```
@@ -72,7 +72,7 @@ type Params<P> = {
 @JsonProperty(options: Options | string)
 ```
 
-####path:
+#### path
 The path property can be set in a few different ways:
 ```typescript
 // By inferring path from the property name:
@@ -96,7 +96,7 @@ class Track {
 }
 
 ```
-Path property supports different formats for resolving deeply nested structures provided by lodash `_.set(object, path, value)
+Path property supports different formats for resolving deeply nested structures provided by lodash `_.set(object, path, value)`
 
 Resolving deeply nested structures:
 ```typescript
