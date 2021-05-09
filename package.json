@@ -28,7 +28,8 @@
   ],
   "homepage": "https://github.com/Eljoy/ts-jackson#readme",
   "dependencies": {
-    "lodash": "^4.17.21",
+    "lodash.get": "^4.4.2",
+    "lodash.set": "^4.3.2",
     "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {

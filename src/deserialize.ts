@@ -1,7 +1,8 @@
 /**
  * @author Ilias Gazdaliev <invimind@gmail.com>
  */
-import { get, set } from 'lodash'
+import get from 'lodash.get'
+import set from 'lodash.set'
 import 'reflect-metadata'
 import {
   assertRequired,
