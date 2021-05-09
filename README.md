@@ -16,10 +16,8 @@ support for the decorators:
 ```json
 {
     "compilerOptions": {
-        //...
         "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        //...
+        "experimentalDecorators": true
     }
 }
 ```
@@ -29,7 +27,7 @@ import { JsonProperty, Serializable, deserialize, serialize } from 'typescript-j
 ```
 
 ## Api
-###Imports: 
+### Imports: 
 ```typescript
 import { JsonProperty, Serializable, deserialize, serialize } from 'typescript-json-serializer';
 ```
@@ -72,7 +70,7 @@ type Params<P> = {
 @JsonProperty(options: Options | string)
 ```
 
-####path:
+#### path:
 The path property can be set in a few different ways:
 ```typescript
 // By inferring path from the property name:
