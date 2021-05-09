@@ -68,7 +68,7 @@ function deserializeProperty(
   toType: JsonPropertyMetadata['type'],
   elementType: JsonPropertyMetadata['elementType']
 ) {
-  if (value === undefined) {
+  if (value === undefined || value === null) {
     return value
   }
   switch (toType?.name) {
