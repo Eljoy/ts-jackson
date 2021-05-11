@@ -1,6 +1,6 @@
 {
   "name": "ts-jackson",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "author": "Ilias Gazdaliev",
   "description": "",
   "main": "dist/index.js",
@@ -24,7 +24,21 @@
     "serializer",
     "deserializer",
     "decorator",
-    "metadata"
+    "metadata",
+    "serialize",
+    "deserialize",
+    "json serialize",
+    "json deserialize",
+    "DTO",
+    "Data Transfer Objects",
+    "Jackson",
+    "Object mapper",
+    "json-mapper",
+    "json-adapter",
+    "json-transformer",
+    "typescript-json",
+    "api-adapter",
+    "api-mapper"
   ],
   "homepage": "https://github.com/Eljoy/ts-jackson#readme",
   "dependencies": {
