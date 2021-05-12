@@ -1,7 +1,7 @@
 import { deserialize, JsonProperty } from '../../../../index'
+import Entity from '../../Entity'
 import { Album } from '../album'
 import { Artist } from '../artist'
-import Entity from '../Entity'
 
 export default class Track extends Entity {
   @JsonProperty({ path: 'track.id', required: true })

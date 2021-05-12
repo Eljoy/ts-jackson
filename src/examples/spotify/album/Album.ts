@@ -1,6 +1,6 @@
 import { deserialize, JsonProperty, Serializable } from '../../../../index'
+import Entity from '../../Entity'
 import { Artist } from '../artist'
-import Entity from '../Entity'
 import { Image } from '../image'
 
 @Serializable()

@@ -1,4 +1,4 @@
-import { deserialize, Serializable, serialize } from '../../../index'
+import { deserialize, Serializable, serialize } from '../../index'
 
 @Serializable()
 export default class Entity {

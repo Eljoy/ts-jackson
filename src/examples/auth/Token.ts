@@ -1,5 +1,6 @@
 import { deserialize, JsonProperty } from '../../../index'
-import Entity from '../spotify/Entity'
+import Entity from '../Entity'
+
 export default class Token extends Entity {
   @JsonProperty({ path: 'access_token', required: true })
   public readonly accessToken: string
@@ -14,9 +15,10 @@ export default class Token extends Entity {
   public readonly expiresIn: number
 
   @JsonProperty<Date>({
-    path: 'expires_in',
-    afterDeserialize: (_, propertyValue) => {
-      return new Date(Date.now() + propertyValue.getTime())
+    path: 'expires_at',
+    afterDeserialize: (deserializedInstance: Token) => {
+      const expiresAtTimestamp = Date.now() + deserializedInstance.expiresIn
+      return new Date(expiresAtTimestamp)
     },
   })
   expiresAt: Date

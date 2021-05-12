@@ -1,5 +1,5 @@
 import { deserialize, JsonProperty } from '../../../../index'
-import Entity from '../Entity'
+import Entity from '../../Entity'
 import { Image } from '../image'
 
 export default class PlaylistPreview extends Entity {

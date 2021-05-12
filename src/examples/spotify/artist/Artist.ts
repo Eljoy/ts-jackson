@@ -1,5 +1,5 @@
 import { deserialize, JsonProperty, Serializable } from '../../../../index'
-import Entity from '../Entity'
+import Entity from '../../Entity'
 
 @Serializable()
 export default class Artist extends Entity {
