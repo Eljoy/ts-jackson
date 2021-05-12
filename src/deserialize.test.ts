@@ -37,6 +37,7 @@ describe('deserialize', () => {
       @JsonProperty()
       baz = 'test'
     }
+
     expect(deserialize({}, Class)).toStrictEqual(new Class())
   })
 
@@ -153,6 +154,7 @@ describe('deserialize', () => {
       @JsonProperty({ elementType: Dog })
       dogs: Dog[]
     }
+
     const json = {
       name: 'Shaggy',
       dogs: [
@@ -191,6 +193,7 @@ describe('deserialize', () => {
       @JsonProperty({ elementType: Dog })
       dogs: Set<Dog>
     }
+
     const json = {
       name: 'Shaggy',
       dogs: [
@@ -246,6 +249,7 @@ describe('deserialize', () => {
 
   describe('validate', () => {
     const validate = (property) => inRange(property, 18, 99)
+
     @Serializable()
     class Class {
       @JsonProperty<number>({
@@ -280,6 +284,7 @@ describe('deserialize', () => {
 
   it(`Should throw an error if class is not annotated with ${Serializable.name}`, () => {
     class Class {}
+
     expect(() => deserialize({}, Class)).toThrow(new SerializableError(Class))
   })
 
@@ -290,6 +295,7 @@ describe('deserialize', () => {
         surname: 'Jackson',
       },
     }
+
     @Serializable()
     class Class {
       @JsonProperty<string>({
@@ -299,8 +305,64 @@ describe('deserialize', () => {
       })
       fullName: string
     }
+
     const expected = new Class()
     expected.fullName = json.full_name.name + ' ' + json.full_name.surname
     expect(deserialize(json, Class)).toStrictEqual(expected)
+  })
+
+  describe('afterDeserialize', () => {
+    test('Date', () => {
+      const json = {
+        expires_in: 3600,
+      }
+
+      @Serializable()
+      class Class {
+        @JsonProperty<Date>({
+          path: 'expires_in',
+          afterDeserialize: (_, propertyValue) => {
+            return new Date(Date.now() + propertyValue.getTime())
+          },
+        })
+        expiresAt: Date
+      }
+      const expected = new Class()
+      const expiresAt = new Date(Date.now() + json.expires_in)
+      expected.expiresAt = expiresAt
+      const deserializedValue = deserialize(json, Class)
+      expect(deserializedValue.expiresAt.getTime()).toBeGreaterThanOrEqual(
+        expiresAt.getTime()
+      )
+      expect(deserializedValue.expiresAt.getTime()).toBeLessThan(
+        expiresAt.getTime() + 100
+      )
+    })
+
+    test('String', () => {
+      @Serializable()
+      class Class {
+        @JsonProperty()
+        name: string
+
+        @JsonProperty<string>({
+          path: 'surname',
+          afterDeserialize: (deserializedInstance: Class, propertyValue) => {
+            return deserializedInstance.name + ' ' + propertyValue
+          },
+        })
+        fullName: string
+      }
+
+      const json = {
+        name: 'John',
+        surname: 'Jones',
+      }
+
+      const expected = new Class()
+      expected.name = json.name
+      expected.fullName = json.name + ' ' + json.surname
+      expect(deserialize(json, Class)).toEqual(expected)
+    })
   })
 })

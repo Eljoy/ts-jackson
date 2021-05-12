@@ -29,14 +29,17 @@ export default function deserialize<T, U extends Array<unknown>>(
   ...args: U
 ): T {
   assertSerializable(serializableClass)
-  const propsMetadata: Record<
-    string,
-    JsonPropertyMetadata
-  > = Reflect.getMetadata(
-    ReflectMetaDataKeys.TsJacksonJsonProperty,
-    serializableClass
-  )
-  const result = new serializableClass(...args)
+  const propsMetadata: Record<string, JsonPropertyMetadata> =
+    Reflect.getMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      serializableClass
+    )
+  const resultClass = new serializableClass(...args)
+  const propertiesAfterDeserialize: {
+    propName: unknown
+    deserializedValue: unknown
+    afterDeserialize: JsonPropertyMetadata['afterDeserialize']
+  }[] = []
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
     const jsonValue = get(json, propParams.path)
     propParams.required &&
@@ -58,10 +61,25 @@ export default function deserialize<T, U extends Array<unknown>>(
         serializableClass,
       })
     if (deserializedValue !== undefined) {
-      set(result, propName, deserializedValue)
+      set(resultClass, propName, deserializedValue)
     }
+    propParams.afterDeserialize &&
+      propertiesAfterDeserialize.push({
+        propName,
+        deserializedValue,
+        afterDeserialize: propParams.afterDeserialize,
+      })
   }
-  return result
+  propertiesAfterDeserialize.forEach(
+    ({ propName, deserializedValue, afterDeserialize }) => {
+      set(
+        resultClass,
+        propName,
+        afterDeserialize(resultClass, deserializedValue)
+      )
+    }
+  )
+  return resultClass
 }
 
 function deserializeProperty(
@@ -74,7 +92,7 @@ function deserializeProperty(
   }
   switch (toType?.name) {
     case Types.Date: {
-      return Date.parse(value as string)
+      return new Date(value as string | number | Date)
     }
     case Types.Array: {
       return (value as Record<string, unknown>[]).map((item) => {

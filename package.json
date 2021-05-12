@@ -1,6 +1,6 @@
 {
   "name": "ts-jackson",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "author": "Ilias Gazdaliev",
   "description": "",
   "main": "dist/index.js",

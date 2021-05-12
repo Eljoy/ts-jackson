@@ -19,6 +19,7 @@ import { ReflectMetaDataKeys } from './common'
  * if property fails to pass validate check
  * @param {Function} deserialize function for custom deserialization
  * @param {Function} serialize function for custom serialization
+ * @param {Function} afterDeserialize takes deserialized instance and deserialized property. Should return new property value.
  */
 type Params<P> = {
   path?: string
@@ -28,6 +29,10 @@ type Params<P> = {
   validate?: (property: P) => boolean
   deserialize?: (jsonValue: unknown) => P
   serialize?: (property: P) => unknown
+  afterDeserialize?: (
+    deserializedInstance: InstanceType<new (...args: unknown[]) => unknown>,
+    propertyValue: P
+  ) => P
 }
 
 export type JsonPropertyMetadata<P = unknown> = {
@@ -37,8 +42,7 @@ export type JsonPropertyMetadata<P = unknown> = {
 } & Params<P>
 
 /**
- * Function to deserialize json to Serializable class
- *
+ * Decorator. Collects annotated property metadata.
  * @param {string | Params} arg
  */
 export default function JsonProperty<P = unknown>(

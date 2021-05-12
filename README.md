@@ -56,6 +56,7 @@ class Class {}
  * if property fails to pass validate check
  * @param {Function} deserialize function for custom deserialization
  * @param {Function} serialize function for custom serialization
+ * @param {Function} afterDeserialize takes deserialized instance and deserialized property. Should return new property value.
  */
 type Params<P> = {
   path?: string
