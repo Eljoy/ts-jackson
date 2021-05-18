@@ -25,12 +25,12 @@ type Params<P> = {
   path?: string
   required?: boolean
   type?: new (...params: Array<unknown>) => unknown
-  elementType?: new (...params: Array<unknown>) => unknown
+  elementType?: new (...args) => unknown
   validate?: (property: P) => boolean
   deserialize?: (jsonValue: unknown) => P
   serialize?: (property: P) => unknown
   afterDeserialize?: (
-    deserializedInstance: InstanceType<new (...args: unknown[]) => unknown>,
+    deserializedInstance: InstanceType<new (...args) => unknown>,
     propertyValue: P
   ) => P
 }
@@ -38,7 +38,7 @@ type Params<P> = {
 export type JsonPropertyMetadata<P = unknown> = {
   name: string
   path: string
-  type: new (...params: Array<unknown>) => unknown
+  type: new (...params) => unknown
 } & Params<P>
 
 /**

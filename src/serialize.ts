@@ -16,9 +16,9 @@ import { JsonPropertyMetadata } from './JsonProperty'
  * @param {Function} instance serializable instance
  * @returns {Record<string, unknown>} json
  */
-export default function serialize<
-  T extends new (...args: unknown[]) => unknown
->(instance: InstanceType<T>): Record<string, unknown> {
+export default function serialize<T extends new (...args) => unknown>(
+  instance: InstanceType<T>
+): Record<string, unknown> {
   assertSerializable(instance.constructor)
   const propsMetadata: Record<
     string,

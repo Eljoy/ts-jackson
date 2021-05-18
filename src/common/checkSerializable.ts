@@ -1,6 +1,8 @@
 import { ReflectMetaDataKeys } from './ReflectMetaDataKeys'
 
-export default function checkSerializable(target: Object): boolean {
+export default function checkSerializable(
+  target: (new (...params) => unknown) | Function
+): boolean {
   if (!target) {
     return false
   }
