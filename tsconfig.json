@@ -8,10 +8,9 @@
     "experimentalDecorators": true,
     "target": "es5",
     "esModuleInterop": true,
-    "removeComments": true,
+    "removeComments": false,
     "strict": false,
     "noImplicitAny": false,
-    "allowJs": false,
     "strictPropertyInitialization": false
   },
   "exclude": ["./node_modules/*", "./dist/**/*"]
