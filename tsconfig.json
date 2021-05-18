@@ -1,20 +1,18 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
     "outDir": "./dist",
-    "strictFunctionTypes": false,
-    "lib": [
-      "es2015"
-    ],
-    "jsx": "react",
-    "removeComments": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "strict": false,
+    "sourceMap": false,
     "declaration": true,
-    "sourceMap": false
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es5",
+    "esModuleInterop": true,
+    "removeComments": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "allowJs": false,
+    "strictPropertyInitialization": false
   },
-  "exclude": ["../../node_modules/*", "./node_modules/*", "./dist"]
+  "exclude": ["./node_modules/*", "./dist/**/*"]
 }
