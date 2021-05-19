@@ -1,7 +1,7 @@
-import { deserialize, JsonProperty } from '../../../../index'
-import Entity from '../../Entity'
+import { JsonProperty } from '../../../../index'
+import SerializableEntity from '../../../SerializableEntity'
 
-export default class Image extends Entity {
+export default class Image extends SerializableEntity {
   @JsonProperty()
   readonly height?: number
 
@@ -10,8 +10,4 @@ export default class Image extends Entity {
 
   @JsonProperty({ required: true })
   readonly url: string
-
-  static deserialize(imageJson: Record<string, unknown>): Image {
-    return deserialize(imageJson, Image)
-  }
 }

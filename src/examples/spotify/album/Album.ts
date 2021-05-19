@@ -1,10 +1,10 @@
-import { deserialize, JsonProperty, Serializable } from '../../../../index'
-import Entity from '../../Entity'
+import { JsonProperty, Serializable } from '../../../../index'
+import SerializableEntity from '../../../SerializableEntity'
 import { Artist } from '../artist'
 import { Image } from '../image'
 
 @Serializable()
-export default class Album extends Entity {
+export default class Album extends SerializableEntity {
   @JsonProperty({ required: true })
   readonly id: string
 
@@ -28,8 +28,4 @@ export default class Album extends Entity {
 
   @JsonProperty()
   readonly href: string
-
-  static deserialize(albumDao: Record<string, unknown>): Album {
-    return deserialize(albumDao, Album)
-  }
 }

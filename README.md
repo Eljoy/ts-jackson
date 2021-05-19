@@ -233,5 +233,22 @@ const deserializedClassIntance = deserialize({url: 'some url'}, Image, 5, 4)
 const serializedJson = serialize(deserializedClassIntance)
 ```
 
+#### SerializableEntity
+```typescript
+/**
+ * @class
+ * Utility class that encapsulates deserialize, serialize functions
+ * and the need for @Serializable explicit decoration.
+ */
+class SerializableEntity {
+  serialize(): Record<string, unknown>;
+
+  static deserialize<T, U extends Array<unknown>>(this: {
+    new(...params: [...U]): T;
+  }, json: Record<string, unknown>, ...args: U): T;
+}
+
+```
+
 
 

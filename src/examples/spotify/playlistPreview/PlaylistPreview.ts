@@ -1,8 +1,8 @@
-import { deserialize, JsonProperty } from '../../../../index'
-import Entity from '../../Entity'
+import { JsonProperty } from '../../../../index'
+import SerializableEntity from '../../../SerializableEntity'
 import { Image } from '../image'
 
-export default class PlaylistPreview extends Entity {
+export default class PlaylistPreview extends SerializableEntity {
   @JsonProperty({ required: true })
   readonly id: string
 
@@ -22,11 +22,5 @@ export default class PlaylistPreview extends Entity {
   readonly tracks: {
     href: string
     total: number
-  }
-
-  static deserialize(
-    playlistPreviewJson: Record<string, unknown>
-  ): PlaylistPreview {
-    return deserialize(playlistPreviewJson, PlaylistPreview)
   }
 }

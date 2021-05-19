@@ -1,9 +1,9 @@
-import { deserialize, JsonProperty } from '../../../../index'
-import Entity from '../../Entity'
+import { JsonProperty } from '../../../../index'
+import SerializableEntity from '../../../SerializableEntity'
 import { Album } from '../album'
 import { Artist } from '../artist'
 
-export default class Track extends Entity {
+export default class Track extends SerializableEntity {
   @JsonProperty({ path: 'track.id', required: true })
   readonly id: string
 
@@ -24,8 +24,4 @@ export default class Track extends Entity {
 
   @JsonProperty({ path: 'track.duration_ms', required: true })
   readonly durationMs: number
-
-  static deserialize(trackJson: Record<string, unknown>): Track {
-    return deserialize(trackJson, Track)
-  }
 }

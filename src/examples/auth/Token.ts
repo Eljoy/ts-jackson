@@ -1,7 +1,7 @@
-import { deserialize, JsonProperty } from '../../../index'
-import Entity from '../Entity'
+import { JsonProperty } from '../../../index'
+import SerializableEntity from '../../SerializableEntity'
 
-export default class Token extends Entity {
+export default class Token extends SerializableEntity {
   @JsonProperty({ path: 'access_token', required: true })
   public readonly accessToken: string
 
@@ -22,8 +22,4 @@ export default class Token extends Entity {
     },
   })
   expiresAt: Date
-
-  static deserialize(tokenDao: Record<string, unknown>): Token {
-    return deserialize(tokenDao, Token)
-  }
 }
