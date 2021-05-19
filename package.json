@@ -9,8 +9,9 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "rollup -c",
-    "postbuild": "npm run tsc-release",
+    "postbuild": "npm run tsc-release && npm run pretify-dist",
     "tsc-release": "tsc --build ts-config.release.json",
+    "pretify-dist": "cd ./dist && prettier --write .",
     "test": "jest",
     "watch": "tsc --watch"
   },
