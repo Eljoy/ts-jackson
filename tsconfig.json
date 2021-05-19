@@ -1,17 +1,19 @@
 {
   "compilerOptions": {
+    "target": "es5",
     "outDir": "./dist",
+    "strictFunctionTypes": false,
+    "lib": [
+      "es2015"
+    ],
     "sourceMap": false,
     "declaration": true,
-    "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es5",
     "esModuleInterop": true,
     "removeComments": false,
     "strict": false,
-    "noImplicitAny": false,
-    "strictPropertyInitialization": false
+    "noImplicitAny": false
   },
   "exclude": ["./node_modules/*", "./dist/**/*"]
 }
