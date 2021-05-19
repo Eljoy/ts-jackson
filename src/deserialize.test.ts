@@ -62,6 +62,28 @@ describe('deserialize', () => {
     expect(deserialize(json, Class)).toEqual(expected)
   })
 
+  test('String json deserialization', () => {
+    const json = {
+      bar: {
+        foo: true,
+        baz: 'bazName',
+      },
+    }
+
+    @Serializable()
+    class Class {
+      @JsonProperty()
+      bar: {
+        foo: boolean
+        baz: string
+      }
+    }
+
+    const expected = new Class()
+    expected.bar = json.bar
+    expect(deserialize(JSON.stringify(json), Class)).toStrictEqual(expected)
+  })
+
   test('Class with constructor arguments', () => {
     const json = {
       id: 'idValue',

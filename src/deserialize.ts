@@ -17,34 +17,37 @@ import { JsonPropertyMetadata } from './JsonProperty'
 /**
  * Function to deserialize json to Serializable class
  *
- * @param {Record<string, unknown>} json
+ * @param {Record<string, unknown> | string} json
  * @param serializableClass Class to which json should be serialized
  * @param args an arguments to be provided to constructor.
  * For example Cat(readonly name, readonly color)
  * deserialize({}, Cat, 'Moon', 'black')
  */
 export default function deserialize<T, U extends Array<unknown>>(
-  json: Record<string, unknown>,
-  serializableClass: new (...params: [...U]) => T,
+  json: Record<string, unknown> | string,
+  serializableClass: new (...args: [...U]) => T,
   ...args: U
 ): T {
   assertSerializable(serializableClass)
-  const propsMetadata: Record<string, JsonPropertyMetadata> =
-    Reflect.getMetadata(
-      ReflectMetaDataKeys.TsJacksonJsonProperty,
-      serializableClass
-    )
+  const propsMetadata: Record<
+    string,
+    JsonPropertyMetadata
+  > = Reflect.getMetadata(
+    ReflectMetaDataKeys.TsJacksonJsonProperty,
+    serializableClass
+  )
   const resultClass = new serializableClass(...args)
+  const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
   const propertiesAfterDeserialize: {
     propName: unknown
     deserializedValue: unknown
     afterDeserialize: JsonPropertyMetadata['afterDeserialize']
   }[] = []
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    const jsonValue = get(json, propParams.path)
+    const jsonValue = get(jsonObject, propParams.path)
     propParams.required &&
       assertRequired({
-        json,
+        json: jsonObject,
         propName,
         propValue: jsonValue,
         serializableClass,
