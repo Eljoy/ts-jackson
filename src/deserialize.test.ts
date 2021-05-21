@@ -42,6 +42,18 @@ describe('deserialize', () => {
       expect(deserialize({}, Class)).toStrictEqual(new Class())
     })
 
+    test('Field without JsonProperty decorator', () => {
+      @Serializable()
+      class Class {
+        @JsonProperty()
+        baz = 'bazValue'
+
+        foo = 'fooValue'
+      }
+
+      expect(deserialize({}, Class)).toStrictEqual(new Class())
+    })
+
     test('Class with array properties', () => {
       const json = {
         primitiveArray: [1, 2, 3],

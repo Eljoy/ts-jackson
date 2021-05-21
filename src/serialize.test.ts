@@ -61,6 +61,20 @@ describe('serialize', () => {
     expect(serialize(testClass)).toEqual(json)
   })
 
+  test('Field without JsonProperty decorator', () => {
+    @Serializable()
+    class Class {
+      @JsonProperty()
+      baz = 'bazValue'
+
+      foo = 'fooValue'
+    }
+
+    expect(serialize(new Class())).toStrictEqual({
+      baz: 'bazValue',
+    })
+  })
+
   test('Tuple type', () => {
     @Serializable()
     class Foo {
