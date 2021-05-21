@@ -88,42 +88,49 @@ export default function deserialize<T, U extends Array<unknown>>(
 function deserializeProperty(
   value: unknown,
   toType: JsonPropertyMetadata['type'],
-  elementType: JsonPropertyMetadata['elementType']
+  elementType?: JsonPropertyMetadata['elementType']
 ) {
-  if (value === undefined || value === null) {
+  if (value === undefined || value === null || toType === undefined) {
     return value
   }
-  switch (toType?.name) {
-    case Types.Date: {
-      return new Date(value as string | number | Date)
-    }
-    case Types.Array: {
-      return (value as Record<string, unknown>[]).map((item) => {
-        const isSerializable = checkSerializable(elementType)
-        return isSerializable ? deserialize(item, elementType) : item
-      })
-    }
-    case Types.Set: {
-      const values = (value as Record<string, unknown>[]).map((item) => {
-        const isSerializable = checkSerializable(elementType)
-        return isSerializable ? deserialize(item, elementType) : item
-      })
-      return new Set(values)
-    }
-    case Types.Boolean: {
-      return Boolean(value)
-    }
-    case Types.Number: {
-      return Number.parseInt(value as string)
-    }
-    case Types.String: {
-      return value
-    }
-    default: {
-      const isSerializable = checkSerializable(toType)
-      return isSerializable
-        ? deserialize(value as Record<string, unknown>, toType)
-        : value
+  if (Array.isArray(toType)) {
+    return toType.map((toTypeItem, index) => {
+      return deserializeProperty(value[index], toTypeItem)
+    })
+  }
+  if (typeof toType === 'function') {
+    switch (toType?.name) {
+      case Types.Date: {
+        return new Date(value as string | number | Date)
+      }
+      case Types.Array: {
+        return (value as Record<string, unknown>[]).map((item) => {
+          const isSerializable = checkSerializable(elementType)
+          return isSerializable ? deserialize(item, elementType) : item
+        })
+      }
+      case Types.Set: {
+        const values = (value as Record<string, unknown>[]).map((item) => {
+          const isSerializable = checkSerializable(elementType)
+          return isSerializable ? deserialize(item, elementType) : item
+        })
+        return new Set(values)
+      }
+      case Types.Boolean: {
+        return Boolean(value)
+      }
+      case Types.Number: {
+        return Number.parseInt(value as string)
+      }
+      case Types.String: {
+        return value.toString()
+      }
+      default: {
+        const isSerializable = checkSerializable(toType)
+        return isSerializable
+          ? deserialize(value as Record<string, unknown>, toType)
+          : value
+      }
     }
   }
 }

@@ -9,79 +9,81 @@ import JsonProperty from './JsonProperty'
 import Serializable from './Serializable'
 
 describe('deserialize', () => {
-  test('Class with object field', () => {
-    const json = {
-      bar: {
-        foo: true,
-        baz: 'bazName',
-      },
-    }
-
-    @Serializable()
-    class Class {
-      @JsonProperty()
-      bar: {
-        foo: boolean
-        baz: string
+  describe('Basic deserialization', () => {
+    test('Class with object field', () => {
+      const json = {
+        bar: {
+          foo: true,
+          baz: 'bazName',
+        },
       }
-    }
 
-    const expected = new Class()
-    expected.bar = json.bar
-    expect(deserialize(json, Class)).toStrictEqual(expected)
-  })
-
-  test('Class with default properties', () => {
-    @Serializable()
-    class Class {
-      @JsonProperty()
-      baz = 'test'
-    }
-
-    expect(deserialize({}, Class)).toStrictEqual(new Class())
-  })
-
-  test('Class with array properties', () => {
-    const json = {
-      primitiveArray: [1, 2, 3],
-      complexArray: [{ foo: 4 }, { baz: true, bar: 'varValue' }],
-    }
-
-    @Serializable()
-    class Class {
-      @JsonProperty()
-      primitiveArray: Array<number>
-
-      @JsonProperty()
-      complexArray: Array<Record<string, unknown>>
-    }
-
-    const expected = new Class()
-    expected.primitiveArray = json.primitiveArray
-    expected.complexArray = json.complexArray
-    expect(deserialize(json, Class)).toEqual(expected)
-  })
-
-  test('String json deserialization', () => {
-    const json = {
-      bar: {
-        foo: true,
-        baz: 'bazName',
-      },
-    }
-
-    @Serializable()
-    class Class {
-      @JsonProperty()
-      bar: {
-        foo: boolean
-        baz: string
+      @Serializable()
+      class Class {
+        @JsonProperty()
+        bar: {
+          foo: boolean
+          baz: string
+        }
       }
-    }
 
-    const expected = new Class()
-    expected.bar = json.bar
-    expect(deserialize(JSON.stringify(json), Class)).toStrictEqual(expected)
+      const expected = new Class()
+      expected.bar = json.bar
+      expect(deserialize(json, Class)).toStrictEqual(expected)
+    })
+
+    test('Class with default properties', () => {
+      @Serializable()
+      class Class {
+        @JsonProperty()
+        baz = 'test'
+      }
+
+      expect(deserialize({}, Class)).toStrictEqual(new Class())
+    })
+
+    test('Class with array properties', () => {
+      const json = {
+        primitiveArray: [1, 2, 3],
+        complexArray: [{ foo: 4 }, { baz: true, bar: 'varValue' }],
+      }
+
+      @Serializable()
+      class Class {
+        @JsonProperty()
+        primitiveArray: Array<number>
+
+        @JsonProperty()
+        complexArray: Array<Record<string, unknown>>
+      }
+
+      const expected = new Class()
+      expected.primitiveArray = json.primitiveArray
+      expected.complexArray = json.complexArray
+      expect(deserialize(json, Class)).toEqual(expected)
+    })
+
+    test('String json deserialization', () => {
+      const json = {
+        bar: {
+          foo: true,
+          baz: 'bazName',
+        },
+      }
+
+      @Serializable()
+      class Class {
+        @JsonProperty()
+        bar: {
+          foo: boolean
+          baz: string
+        }
+      }
+
+      const expected = new Class()
+      expected.bar = json.bar
+      expect(deserialize(JSON.stringify(json), Class)).toStrictEqual(expected)
+    })
   })
 
   test('Class with constructor arguments', () => {
@@ -173,7 +175,7 @@ describe('deserialize', () => {
       @JsonProperty()
       name: string
 
-      @JsonProperty({ elementType: Dog })
+      @JsonProperty<Dog>({ elementType: Dog })
       dogs: Dog[]
     }
 
@@ -237,6 +239,35 @@ describe('deserialize', () => {
     expected.dogs = new Set([scoobyDoo, scrappyDoo])
     expected.name = json.name
     expect(deserialize(json, Owner)).toStrictEqual(expected)
+  })
+
+  test('Tuple type', () => {
+    @Serializable()
+    class Foo {
+      @JsonProperty()
+      value: string
+    }
+
+    @Serializable()
+    class Bar {
+      @JsonProperty<[Number, Array<string>, Foo]>({
+        type: [Number, Array, Foo],
+      })
+      params: [Number, Array<string>, Foo]
+    }
+
+    const json = {
+      params: [5, ['test'], { value: 'FooValue' }],
+    }
+    const deserialized = deserialize(json, Bar)
+    const foo = new Foo()
+    foo.value = 'FooValue'
+
+    const bar = new Bar()
+    bar.params = [json.params[0] as number, json.params[1] as string[], foo]
+
+    expect(deserialized).toStrictEqual(bar)
+    expect(bar.params[2]).toBeInstanceOf(Foo)
   })
 
   describe('Inheritance', () => {

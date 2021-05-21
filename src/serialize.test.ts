@@ -61,6 +61,33 @@ describe('serialize', () => {
     expect(serialize(testClass)).toEqual(json)
   })
 
+  test('Tuple type', () => {
+    @Serializable()
+    class Foo {
+      @JsonProperty()
+      value: string
+    }
+
+    @Serializable()
+    class Bar {
+      @JsonProperty<[Number, Array<string>, Foo]>({
+        type: [Number, Array, Foo],
+      })
+      params: [Number, Array<string>, Foo]
+    }
+
+    const json = {
+      params: [5, ['test'], { value: 'FooValue' }],
+    }
+
+    const foo = new Foo()
+    foo.value = 'FooValue'
+
+    const bar = new Bar()
+    bar.params = [json.params[0] as number, json.params[1] as string[], foo]
+    expect(serialize(bar)).toStrictEqual(json)
+  })
+
   test('inheritance', () => {
     @Serializable()
     class Parent {

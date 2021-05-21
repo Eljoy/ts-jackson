@@ -44,31 +44,38 @@ export default function serialize<T extends new (...args) => unknown>(
 function serializeProperty(
   value: unknown,
   type: JsonPropertyMetadata['type'],
-  elementType: JsonPropertyMetadata['elementType']
+  elementType?: JsonPropertyMetadata['elementType']
 ) {
   if (value === undefined) {
     return value
   }
-  switch (type?.name) {
-    case Types.Array: {
-      return (value as Record<string, unknown>[]).map((item) => {
-        const isSerializable = checkSerializable(elementType)
-        return isSerializable ? serialize(item) : item
-      })
-    }
-    case Types.Set: {
-      return Array.from((value as Set<Record<string, unknown>>).values()).map(
-        (item) => {
+  if (Array.isArray(type)) {
+    return type.map((toTypeItem, index) => {
+      return serializeProperty(value[index], toTypeItem)
+    })
+  }
+  if (typeof type === 'function') {
+    switch (type?.name) {
+      case Types.Array: {
+        return (value as Record<string, unknown>[]).map((item) => {
           const isSerializable = checkSerializable(elementType)
           return isSerializable ? serialize(item) : item
-        }
-      )
-    }
-    default: {
-      const isSerializable = checkSerializable(type)
-      return isSerializable
-        ? serialize(value as Record<string, unknown>)
-        : value
+        })
+      }
+      case Types.Set: {
+        return Array.from((value as Set<Record<string, unknown>>).values()).map(
+          (item) => {
+            const isSerializable = checkSerializable(elementType)
+            return isSerializable ? serialize(item) : item
+          }
+        )
+      }
+      default: {
+        const isSerializable = checkSerializable(type)
+        return isSerializable
+          ? serialize(value as Record<string, unknown>)
+          : value
+      }
     }
   }
 }

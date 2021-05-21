@@ -47,8 +47,8 @@ class Class {}
  * @param {string} path -- path pattern for the property
  * supports every pattern provided by lodash/get|set object
  * @param {boolean} required throws an Error if json is missing required property
- * @param {Function} type Optional. In most cases there is no need to specify
- * type explicitly
+ * @param {Function | Function[]} type Optional. In most cases there is no need to specify
+ * type explicitly. You can also provide array of type constructors for tuple support.
  * @param {Function} elementType due to reflect-metadata restriction one should
  * explicitly set elementType property to correctly serialize/deserialize Array
  * or Set values
@@ -61,8 +61,8 @@ class Class {}
 type Params<P> = {
   path?: string
   required?: boolean
-  type?: new (...params: Array<unknown>) => unknown
-  elementType?: new (...params: Array<unknown>) => unknown
+  type?: (new (...args) => unknown) | (new (...args) => unknown)[]
+  elementType?: new (...args) => unknown
   validate?: (property: P) => boolean
   deserialize?: (jsonValue: unknown) => P
   serialize?: (property: P) => unknown

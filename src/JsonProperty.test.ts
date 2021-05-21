@@ -8,6 +8,7 @@ describe('JsonProperty', () => {
       @JsonProperty()
       foo: string
     }
+
     const metaData: JsonPropertyMetadata = Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       Class
@@ -26,6 +27,7 @@ describe('JsonProperty', () => {
       @JsonProperty('a.b.c')
       foo: number
     }
+
     const metaData: JsonPropertyMetadata = Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       Class
@@ -44,6 +46,7 @@ describe('JsonProperty', () => {
       @JsonProperty({ path: 'a[0]' })
       foo: number
     }
+
     const metaData: JsonPropertyMetadata = Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       Class
@@ -59,10 +62,12 @@ describe('JsonProperty', () => {
 
   test('JsonProperty validate param', () => {
     const validate = (foo: number) => foo > 5
+
     class Class {
       @JsonProperty({ validate })
       foo: number
     }
+
     const metaData: JsonPropertyMetadata = Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       Class
@@ -75,6 +80,7 @@ describe('JsonProperty', () => {
       @JsonProperty({ type: Array })
       foo: number
     }
+
     const metaData: JsonPropertyMetadata = Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       Class
