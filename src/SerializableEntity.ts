@@ -9,6 +9,10 @@ import serialize from './serialize'
  */
 @Serializable()
 export default class SerializableEntity {
+  stringify(): string {
+    return JSON.stringify(this.serialize())
+  }
+
   serialize(): Record<string, unknown> {
     return serialize(this)
   }
