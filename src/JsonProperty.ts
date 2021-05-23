@@ -23,16 +23,19 @@ import { ReflectMetaDataKeys } from './common'
  */
 type Params<P> = {
   path?: string
+  paths?: string[]
   required?: boolean
   type?: (new (...args) => P) | { [K in keyof P]: new (...args) => P[K] }
-  elementType?: new (...args) => P
+  elementType?: new (...args) => P extends [] ? P[0] : any
   validate?: (property: P) => boolean
-  deserialize?: (jsonValue: unknown) => P
-  serialize?: (property: P) => unknown
+  deserialize?: (jsonValue: any) => P
+  serialize?: (property: P) => any
   afterDeserialize?: (
-    deserializedInstance: InstanceType<new (...args) => unknown>,
-    propertyValue: P
+    deserializedInstance: InstanceType<new (...args) => any>,
+    propertyValue: any
   ) => P
+  beforeSerialize?: (propertyValue: P) => any
+  afterSerialize?: (serializedData: unknown | unknown[]) => any
 }
 
 export type JsonPropertyMetadata<P = any> = {
@@ -45,15 +48,22 @@ export type JsonPropertyMetadata<P = any> = {
  * @param {string | Params} arg
  */
 export default function JsonProperty<P = unknown>(
-  arg: Params<P> | string = {}
+  arg: Params<P> | string | string[] = {}
 ): (object: Object, propertyName: string) => void {
   return function (object, propertyName) {
-    const params: Params<P> =
-      typeof arg !== 'string'
-        ? arg
-        : {
-            path: arg,
-          }
+    let params: Params<P>
+    switch (true) {
+      case typeof arg === 'string':
+        params = { path: arg as string }
+        break
+      case Array.isArray(arg):
+        params = {
+          paths: arg as [],
+        }
+        break
+      default:
+        params = arg as Params<P>
+    }
     const type =
       params.type || Reflect.getMetadata('design:type', object, propertyName)
     const commonMetadata: Record<string, JsonPropertyMetadata<P>> =

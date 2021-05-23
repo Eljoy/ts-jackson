@@ -29,23 +29,29 @@ export default function serialize<T extends new (...args) => unknown>(
   )
   const json = {}
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
+    let propertyValue, type
+    if (propParams.beforeSerialize) {
+      propertyValue = propParams.beforeSerialize(instance[propName])
+      type = propertyValue.constructor
+    } else {
+      propertyValue = instance[propName]
+      type = propParams.type
+    }
     const serializedProperty = propParams.serialize
-      ? propParams.serialize(instance[propName])
-      : serializeProperty(
-          instance[propName],
-          propParams.type,
-          propParams.elementType
-        )
-    set(json, propParams.path, serializedProperty)
+      ? propParams.serialize(propertyValue)
+      : serializeProperty(propertyValue, type)
+    if (propParams.paths) {
+      propParams.paths.forEach((path, i) => {
+        set(json, path, serializedProperty[i])
+      })
+    } else {
+      set(json, propParams.path, serializedProperty)
+    }
   }
   return json
 }
 
-function serializeProperty(
-  value: unknown,
-  type: JsonPropertyMetadata['type'],
-  elementType?: JsonPropertyMetadata['elementType']
-) {
+function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
   if (value === undefined) {
     return value
   }
@@ -56,19 +62,14 @@ function serializeProperty(
   }
   if (typeof type === 'function') {
     switch (type?.name) {
+      case Types.Set:
       case Types.Array: {
-        return (value as Record<string, unknown>[]).map((item) => {
-          const isSerializable = checkSerializable(elementType)
+        return Array.from(
+          (value as Set<unknown> | Array<unknown>).values()
+        ).map((item) => {
+          const isSerializable = checkSerializable(item.constructor)
           return isSerializable ? serialize(item) : item
         })
-      }
-      case Types.Set: {
-        return Array.from((value as Set<Record<string, unknown>>).values()).map(
-          (item) => {
-            const isSerializable = checkSerializable(elementType)
-            return isSerializable ? serialize(item) : item
-          }
-        )
       }
       default: {
         const isSerializable = checkSerializable(type)

@@ -93,4 +93,42 @@ describe('JsonProperty', () => {
       },
     })
   })
+
+  describe('Paths', () => {
+    test('Paths as an argument', () => {
+      class Class {
+        @JsonProperty(['path1', 'path2'])
+        foo: number
+      }
+
+      const metaData: JsonPropertyMetadata = Reflect.getMetadata(
+        ReflectMetaDataKeys.TsJacksonJsonProperty,
+        Class
+      )
+      expect(metaData['foo']).toStrictEqual({
+        path: 'foo',
+        name: 'foo',
+        paths: ['path1', 'path2'],
+        type: Number,
+      })
+    })
+
+    test('Paths as a property', () => {
+      class Class {
+        @JsonProperty({ paths: ['path1', 'path2'] })
+        foo: number
+      }
+
+      const metaData: JsonPropertyMetadata = Reflect.getMetadata(
+        ReflectMetaDataKeys.TsJacksonJsonProperty,
+        Class
+      )
+      expect(metaData['foo']).toStrictEqual({
+        path: 'foo',
+        name: 'foo',
+        paths: ['path1', 'path2'],
+        type: Number,
+      })
+    })
+  })
 })

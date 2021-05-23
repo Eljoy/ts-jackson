@@ -16,7 +16,7 @@ export type SerializableMetadata = {
  * @returns {Record<string, unknown>} json
  */
 export default function Serializable(): (
-  target: new (...params: Array<unknown>) => unknown
+  target: new (...args) => unknown
 ) => void {
   return (target) => {
     Reflect.defineMetadata(

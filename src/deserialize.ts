@@ -44,7 +44,9 @@ export default function deserialize<T, U extends Array<unknown>>(
     afterDeserialize: JsonPropertyMetadata['afterDeserialize']
   }[] = []
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    const jsonValue = get(jsonObject, propParams.path)
+    const jsonValue = propParams.paths
+      ? propParams.paths.map((path) => get(jsonObject, path))
+      : get(jsonObject, propParams.path)
     propParams.required &&
       assertRequired({
         json: jsonObject,
