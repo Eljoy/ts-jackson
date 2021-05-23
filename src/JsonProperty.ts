@@ -35,7 +35,7 @@ type Params<P> = {
     propertyValue: any
   ) => P
   beforeSerialize?: (propertyValue: P) => any
-  afterSerialize?: (serializedData: unknown | unknown[]) => any
+  afterSerialize?: (serializedData: any) => any
 }
 
 export type JsonPropertyMetadata<P = any> = {
@@ -45,7 +45,9 @@ export type JsonPropertyMetadata<P = any> = {
 
 /**
  * Decorator. Collects annotated property metadata.
- * @param {string | Params} arg
+ * Takes as a param either a single string param (path),
+ * Array of strings (multiple paths), or param object.
+ * @param {string | |string[] | Params } arg
  */
 export default function JsonProperty<P = unknown>(
   arg: Params<P> | string | string[] = {}
