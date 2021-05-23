@@ -1,17 +1,31 @@
 # ts-jackson
 
-A typescript library to deserialize and serialize json into classes. You can use different path pattern
-to resolve deeply nested structures. Every path pattern provided by lodash/get|set object is supported.
-Check out [src/examples](https://github.com/Eljoy/ts-jackson/tree/main/src/examples/spotify) for examples.
-## Installation
+A typescript library to deserialize and serialize json into classes and vice versa. You can use different path pattern
+to resolve deeply nested structures. Every path pattern provided by `lodash.set` function is supported.
+Check out [src/examples](https://github.com/Eljoy/ts-jackson/tree/main/src/examples/spotify) as a reference.
+
+* [Installation](#installation)
+* [Imports](#imports)
+* [Serializable](#serializable)
+* [JsonProperty](#jsonproperty)
+  * [Options](#jsonproperty)
+  * [Path](#path)
+  * [Multiple paths](#multiple-paths)
+* [Deserialize](#deserialize)
+* [Serialize](#serialize)
+* [Using constructor arguments](#deserialize)
+* [SerializableEntity](#serializableentity)
+
+    
+### Installation:
 
 ```sh
 npm install ts-jackson --save
 # or
 yarn add ts-jackson
 ```
-For tsconfig.json file set **experimentalDecorators** and **emitDecoratorMetadata** to true to allow
-support for the decorators:
+For `tsconfig.json` file set `experimentalDecorators` and `emitDecoratorMetadata` to `true` to allow
+decorators support:
 
 ```json
 {
@@ -21,15 +35,10 @@ support for the decorators:
     }
 }
 ```
-
-```typescript
-import { JsonProperty, Serializable, deserialize, serialize } from 'typescript-json-serializer';
-```
-
-## Api
+### Api:
 ### Imports: 
 ```typescript
-import { JsonProperty, Serializable, deserialize, serialize } from 'typescript-json-serializer';
+import { JsonProperty, Serializable, deserialize, serialize, SerializableEntity } from 'typescript-json-serializer';
 ```
 ### Decorators
 #### Serializable
@@ -58,20 +67,39 @@ class Class {}
  * @param {Function} serialize function for custom serialization
  * @param {Function} afterDeserialize takes deserialized instance and deserialized property. Should return new property value.
  */
-type Params<P> = {
+declare type Params<P> = {
   path?: string
+  paths?: string[]
   required?: boolean
-  type?: (new (...args) => unknown) | (new (...args) => unknown)[]
-  elementType?: new (...args) => unknown
+  type?:
+          | (new (...args: any[]) => P)
+          | {
+    [K in keyof P]: new (...args: any[]) => P[K]
+  }
+  elementType?: new (...args: any[]) => P extends [] ? P[0] : any
   validate?: (property: P) => boolean
-  deserialize?: (jsonValue: unknown) => P
-  serialize?: (property: P) => unknown
+  deserialize?: (jsonValue: any) => P
+  serialize?: (property: P) => any
+  afterDeserialize?: (
+          deserializedInstance: InstanceType<new (...args: any[]) => any>,
+          propertyValue: any
+  ) => P
+  beforeSerialize?: (propertyValue: P) => any
+  afterSerialize?: (serializedData: any) => any
 }
 
-@JsonProperty(options: Options | string)
+/**
+ * Decorator. Collects annotated property metadata.
+ * Takes as a param either a single string param (path),
+ * Array of strings (multiple paths), or param object.
+ * @param {string | |string[] | Params } arg
+ */
+export default function JsonProperty<P = unknown>(
+        arg?: Params<P> | string | string[]
+): (object: Object, propertyName: string) => void
 ```
 
-#### path:
+#### Path:
 The path property can be set in a few different ways:
 ```typescript
 // By inferring path from the property name:
@@ -95,7 +123,65 @@ class Track {
 }
 
 ```
-Path property supports different formats for resolving deeply nested structures provided by lodash `_.set(object, path, value)
+Path property supports different formats for resolving deeply nested structures provided by `lodash` `_.set(object, path, value)`
+
+#### Multiple paths
+You can resolve property as a combination of multiple json paths, provided either as `Params` property or 
+as an argument to `@JsonProperty` decorator:
+```typescript
+const json = {
+  images: {
+    smallImage: {
+      url: 'mediumImageUrl',
+    },
+    mediumImage: {
+      url: 'mediumImageUrl',
+    },
+    bigImage: {
+      url: 'bigImageUrl',
+    },
+  },
+}
+
+@Serializable()
+class Playlist {
+  @JsonProperty({
+    paths: ['images.smallImage', 'images.mediumImage', 'images.bigImage'],
+    elementType: Image,
+  })
+  images: Image[]
+}
+```
+You can also provide custom deserialize, beforeSerialize functions:
+```typescript
+const json = {
+  images: [
+    {
+      url: 'mediumImageUrl',
+    },
+    {
+      url: 'mediumImageUrl',
+    },
+    {
+      url: 'bigImageUrl',
+    },
+  ],
+}
+
+@Serializable()
+class Playlist {
+  @JsonProperty({
+    paths: ['images[0]', 'images[2]'],
+    elementType: Image,
+    deserialize: ([icon, cover]: Image[]) => ({ icon, cover }),
+    beforeSerialize: (images) => [images.icon, images.cover],
+  })
+  images: {
+    icon: Image
+    cover: Image
+  }
+}
+```
 
 Resolving deeply nested structures:
 ```typescript
@@ -168,7 +254,6 @@ const serialized = serialize(deserialized)
 ```
 For more patterns for resolving structures check out [lodash/get](https://lodash.com/docs/#get) docs.
 
-### Functions
 #### deserialize
 ```typescript
 /**
@@ -237,16 +322,50 @@ const serializedJson = serialize(deserializedClassIntance)
 ```typescript
 /**
  * @class
- * Utility class that encapsulates deserialize, serialize functions
+ * Utility class that encapsulates deserialize, serialize
  * and the need for @Serializable explicit decoration.
  */
-class SerializableEntity {
-  serialize(): Record<string, unknown>;
-
-  static deserialize<T, U extends Array<unknown>>(this: {
-    new(...params: [...U]): T;
-  }, json: Record<string, unknown>, ...args: U): T;
+export default class SerializableEntity {
+  /**
+   * @method Returns stringified results
+   * of serialize method call
+   */
+  stringify(): string
+  serialize(): Record<string, unknown>
+  static deserialize<T, U extends Array<unknown>>(
+          this: {
+            new (...params: [...U]): T
+          },
+          json: Record<string, unknown>,
+          ...args: U
+  ): T
 }
+// Example:
+class Image extends SerializableEntity {
+  @JsonProperty()
+  readonly height?: number
+
+  @JsonProperty()
+  readonly width?: number
+
+  @JsonProperty({ required: true })
+  readonly url: string
+}
+
+
+const imageJson = {
+  height: '234',
+  width: '123',
+  url: 'http://localhost:8080',
+}
+const image = Image.deserialize(imageJson)
+// Image { height: 234, width: 123, url: 'http://localhost:8080' }
+
+image.serialize()
+// { height: 234, width: 123, url: 'http://localhost:8080' }
+
+image.stringify()
+// '{"height":234,"width":123,"url":"http://localhost:8080"}'
 
 ```
 
