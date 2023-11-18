@@ -1,37 +1,22 @@
-/**
- * @author Ilias Gazdaliev <invimind@gmail.com>
- */
 import 'reflect-metadata'
 import { ReflectMetaDataKeys } from './common'
 
 /**
- * JsonProperty params
- *
- * @param {string} path -- path pattern for the property
- * supports every pattern provided by lodash/get|set object
- * @param {boolean} required throws an Error if json is missing required property
- * @param {Function | Function[]} type Optional. In most cases there is no need to specify
- * type explicitly. You can also provide array of type constructors for tuple support.
- * @param {Function} elementType due to reflect-metadata restriction one should
- * explicitly set elementType property to correctly serialize/deserialize Array
- * or Set values
- * @param {Function} validate function for validating json values. Throws an error
- * if property fails to pass validate check
- * @param {Function} deserialize function for custom deserialization
- * @param {Function} serialize function for custom serialization
- * @param {Function} afterDeserialize takes deserialized instance and deserialized property. Should return new property value.
+ * Type definition for JsonProperty parameters.
  */
 type Params<P> = {
   path?: string
   paths?: string[]
   required?: boolean
-  type?: (new (...args) => P) | { [K in keyof P]: new (...args) => P[K] }
-  elementType?: new (...args) => P extends [] ? P[0] : any
+  type?:
+    | (new (...args: any[]) => P)
+    | { [K in keyof P]: new (...args: any[]) => P[K] }
+  elementType?: new (...args: any[]) => P extends [] ? P[0] : any
   validate?: (property: P) => boolean
   deserialize?: (jsonValue: any) => P
   serialize?: (property: P) => any
   afterDeserialize?: (
-    deserializedInstance: InstanceType<new (...args) => any>,
+    deserializedInstance: InstanceType<new (...args: any[]) => any>,
     propertyValue: any
   ) => P
   beforeSerialize?: (propertyValue: P) => any
@@ -44,45 +29,42 @@ export type JsonPropertyMetadata<P = any> = {
 } & Params<P>
 
 /**
- * Decorator. Collects annotated property metadata.
- * Takes as a param either a single string param (path),
- * Array of strings (multiple paths), or param object.
- * @param {string | |string[] | Params } arg
+ * Decorator for collecting annotated property metadata.
+ * Accepts a string, array of strings, or a Params object.
+ *
+ * @param {string | string[] | Params<P>} arg - The decorator argument.
  */
 export default function JsonProperty<P = unknown>(
   arg: Params<P> | string | string[] = {}
-): (object: Object, propertyName: string) => void {
-  return function (object, propertyName) {
-    let params: Params<P>
-    switch (true) {
-      case typeof arg === 'string':
-        params = { path: arg as string }
-        break
-      case Array.isArray(arg):
-        params = {
-          paths: arg as [],
-        }
-        break
-      default:
-        params = arg as Params<P>
+): (target: Object, propertyName: string) => void {
+  return function (target, propertyName) {
+    let params: Params<P> =
+      typeof arg === 'string'
+        ? { path: arg }
+        : Array.isArray(arg)
+        ? { paths: arg }
+        : arg
+
+    const metadata: JsonPropertyMetadata<P> = {
+      name: propertyName,
+      path: params.path || propertyName,
+      ...params,
+      type:
+        params.type || Reflect.getMetadata('design:type', target, propertyName),
     }
-    const type =
-      params.type || Reflect.getMetadata('design:type', object, propertyName)
-    const commonMetadata: Record<string, JsonPropertyMetadata<P>> =
+
+    const existingMetadata: Record<string, JsonPropertyMetadata<P>> =
       Reflect.getMetadata(
         ReflectMetaDataKeys.TsJacksonJsonProperty,
-        object.constructor
+        target.constructor
       ) || {}
-    commonMetadata[propertyName] = {
-      type,
-      name: propertyName,
-      path: propertyName,
-      ...params,
-    }
+
+    existingMetadata[propertyName] = metadata
+
     Reflect.defineMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
-      commonMetadata,
-      object.constructor
+      existingMetadata,
+      target.constructor
     )
   }
 }

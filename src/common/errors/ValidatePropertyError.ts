@@ -7,8 +7,10 @@ type Params = {
 
 export default class ValidatePropertyError extends Error {
   constructor({ propName, propValue, validate, serializableClass }: Params) {
-    const message = `Property '${propName}' = ${propValue} in ${serializableClass.name}
-    failed to path ${validate} check`
+    const className = serializableClass.name
+    const validationFunctionName = validate.name || 'anonymous function'
+    const message = `Property '${propName}' with value ${propValue} in ${className} failed to pass the validation check by ${validationFunctionName}.`
     super(message)
+    Object.setPrototypeOf(this, ValidatePropertyError.prototype)
   }
 }

@@ -1,27 +1,27 @@
-/**
- * @author Ilias Gazdaliev <invimind@gmail.com>
- */
 import 'reflect-metadata'
 import { ReflectMetaDataKeys } from './common'
 
-type Params = {}
-
 export type SerializableMetadata = {
   className: string
-} & Params
+}
 
 /**
- * Decorator for marking serializable classes
+ * Decorator for marking classes as serializable. It assigns metadata
+ * to the class indicating its name.
  *
- * @returns {Record<string, unknown>} json
+ * @returns {Function} Class decorator function.
  */
 export default function Serializable(): (
-  target: new (...args) => unknown
+  target: new (...args: any[]) => unknown
 ) => void {
   return (target) => {
+    const metadata: SerializableMetadata = {
+      className: target.name,
+    }
+
     Reflect.defineMetadata(
       ReflectMetaDataKeys.TsJacksonSerializable,
-      { className: target.name },
+      metadata,
       target
     )
   }

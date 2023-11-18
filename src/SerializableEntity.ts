@@ -21,7 +21,7 @@ export default class SerializableEntity {
     return serialize(this)
   }
 
-  static deserialize<T, U extends Array<unknown>>(
+  static deserialize<T extends SerializableEntity, U extends Array<unknown>>(
     this: { new (...params: [...U]): T },
     json: Record<string, unknown>,
     ...args: U

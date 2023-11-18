@@ -2,37 +2,46 @@ import JsonProperty from './JsonProperty'
 import SerializableEntity from './SerializableEntity'
 
 describe('SerializableEntity', () => {
-  test('serialize/deserialize inheritance', () => {
+  describe('serialize/deserialize inheritance', () => {
     class Cat extends SerializableEntity {
       @JsonProperty()
       name: string
     }
-    const json = {
-      name: 'Mars',
-    }
-    const deserializedCat = Cat.deserialize(json)
-    expect(deserializedCat).toBeInstanceOf(Cat)
-    expect(deserializedCat.name).toEqual(json.name)
 
-    const serializedCat = deserializedCat.serialize()
-    expect(serializedCat).toEqual(json)
+    it('should correctly deserialize a JSON object', () => {
+      const json = { name: 'Mars' }
+      const deserializedCat = Cat.deserialize(json)
+
+      expect(deserializedCat).toBeInstanceOf(Cat)
+      expect(deserializedCat.name).toEqual(json.name)
+    })
+
+    it('should correctly serialize an object', () => {
+      const cat = new Cat()
+      cat.name = 'Mars'
+
+      const serializedCat = cat.serialize()
+      expect(serializedCat).toEqual({ name: 'Mars' })
+    })
   })
 
-  test('serialize/deserialize with params', () => {
+  describe('serialize/deserialize with constructor parameters', () => {
     class Cat extends SerializableEntity {
       @JsonProperty()
       name: string
+
       constructor(readonly color: string) {
         super()
       }
     }
-    const json = {
-      name: 'Mars',
-    }
-    const deserializedCat = Cat.deserialize(json, 'black')
-    expect(deserializedCat).toEqual({
-      name: json.name,
-      color: 'black',
+
+    it('should deserialize with additional constructor params', () => {
+      const json = { name: 'Mars' }
+      const deserializedCat = Cat.deserialize(json, 'black')
+
+      expect(deserializedCat).toBeInstanceOf(Cat)
+      expect(deserializedCat.name).toEqual('Mars')
+      expect(deserializedCat.color).toEqual('black')
     })
   })
 })

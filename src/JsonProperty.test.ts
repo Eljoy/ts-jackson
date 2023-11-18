@@ -3,132 +3,106 @@ import { ReflectMetaDataKeys } from './common'
 import JsonProperty, { JsonPropertyMetadata } from './JsonProperty'
 
 describe('JsonProperty', () => {
-  test('JsonProperty property path with no args provided', () => {
-    class Class {
+  const testJsonPropertyMetadata = (
+    propertyName: string,
+    expectedMetadata: any,
+    targetClass: any
+  ) => {
+    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      targetClass
+    )
+    expect(metaData[propertyName]).toMatchObject(expectedMetadata)
+  }
+
+  it('should set default path when no args provided', () => {
+    class TestClass {
       @JsonProperty()
       foo: string
     }
 
-    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-      ReflectMetaDataKeys.TsJacksonJsonProperty,
-      Class
+    testJsonPropertyMetadata(
+      'foo',
+      { name: 'foo', path: 'foo', type: String },
+      TestClass
     )
-    expect(metaData).toMatchObject({
-      foo: {
-        name: 'foo',
-        path: 'foo',
-        type: String,
-      },
-    })
   })
 
-  test('JsonProperty property with path provided as string', () => {
-    class Class {
+  it('should set custom path when provided as string', () => {
+    class TestClass {
       @JsonProperty('a.b.c')
       foo: number
     }
 
-    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-      ReflectMetaDataKeys.TsJacksonJsonProperty,
-      Class
+    testJsonPropertyMetadata(
+      'foo',
+      { name: 'foo', path: 'a.b.c', type: Number },
+      TestClass
     )
-    expect(metaData).toMatchObject({
-      foo: {
-        name: 'foo',
-        path: 'a.b.c',
-        type: Number,
-      },
-    })
   })
 
-  test('JsonProperty property with path provided as a part of options argument', () => {
-    class Class {
+  it('should set custom path when provided in options', () => {
+    class TestClass {
       @JsonProperty({ path: 'a[0]' })
       foo: number
     }
 
-    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-      ReflectMetaDataKeys.TsJacksonJsonProperty,
-      Class
+    testJsonPropertyMetadata(
+      'foo',
+      { name: 'foo', path: 'a[0]', type: Number },
+      TestClass
     )
-    expect(metaData).toMatchObject({
-      foo: {
-        name: 'foo',
-        path: 'a[0]',
-        type: Number,
-      },
-    })
   })
 
-  test('JsonProperty validate param', () => {
+  it('should handle custom validate function', () => {
     const validate = (foo: number) => foo > 5
 
-    class Class {
+    class TestClass {
       @JsonProperty({ validate })
       foo: number
     }
 
-    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-      ReflectMetaDataKeys.TsJacksonJsonProperty,
-      Class
-    )
-    expect(metaData).toHaveProperty('foo.validate', validate)
+    testJsonPropertyMetadata('foo', { validate }, TestClass)
   })
 
-  test('JsonProperty with type provided as a param', () => {
-    class Class {
+  it('should override type when provided in options', () => {
+    class TestClass {
       @JsonProperty({ type: Array })
-      foo: number
+      foo: number[]
     }
 
-    const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-      ReflectMetaDataKeys.TsJacksonJsonProperty,
-      Class
+    testJsonPropertyMetadata(
+      'foo',
+      { name: 'foo', path: 'foo', type: Array },
+      TestClass
     )
-    expect(metaData).toMatchObject({
-      foo: {
-        name: 'foo',
-        path: 'foo',
-        type: Array,
-      },
-    })
   })
 
   describe('Paths', () => {
-    test('Paths as an argument', () => {
-      class Class {
+    it('should handle multiple paths as an argument', () => {
+      class TestClass {
         @JsonProperty(['path1', 'path2'])
         foo: number
       }
 
-      const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-        ReflectMetaDataKeys.TsJacksonJsonProperty,
-        Class
+      testJsonPropertyMetadata(
+        'foo',
+        { name: 'foo', paths: ['path1', 'path2'], type: Number },
+        TestClass
       )
-      expect(metaData['foo']).toStrictEqual({
-        path: 'foo',
-        name: 'foo',
-        paths: ['path1', 'path2'],
-        type: Number,
-      })
     })
 
-    test('Paths as a property', () => {
-      class Class {
+    it('should handle multiple paths as a property', () => {
+      class TestClass {
         @JsonProperty({ paths: ['path1', 'path2'] })
         foo: number
       }
 
-      const metaData: JsonPropertyMetadata = Reflect.getMetadata(
-        ReflectMetaDataKeys.TsJacksonJsonProperty,
-        Class
+      testJsonPropertyMetadata(
+        'foo',
+        { name: 'foo', paths: ['path1', 'path2'], type: Number },
+        TestClass
       )
-      expect(metaData['foo']).toStrictEqual({
-        path: 'foo',
-        name: 'foo',
-        paths: ['path1', 'path2'],
-        type: Number,
-      })
     })
   })
 })

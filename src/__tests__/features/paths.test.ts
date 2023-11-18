@@ -25,7 +25,7 @@ describe('Paths', () => {
       const expected = new Class()
       expected.bar = [json.id, json.bar.foo]
       const deserialized = deserialize(json, Class)
-      console.log(serialize(deserialized))
+
       expect(deserialized).toStrictEqual(expected)
       expect(serialize(deserialized)).toStrictEqual({
         id: json.id,

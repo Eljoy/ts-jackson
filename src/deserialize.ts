@@ -39,7 +39,7 @@ export default function deserialize<T, U extends Array<unknown>>(
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
   const propertiesAfterDeserialize: {
-    propName: unknown
+    propName: string
     deserializedValue: unknown
     afterDeserialize: JsonPropertyMetadata['afterDeserialize']
   }[] = []
@@ -122,7 +122,7 @@ function deserializeProperty(
         return Boolean(value)
       }
       case Types.Number: {
-        return Number.parseInt(value as string)
+        return Number(value)
       }
       case Types.String: {
         return value.toString()
