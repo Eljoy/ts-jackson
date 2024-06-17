@@ -1,8 +1,8 @@
 /**
  * @author Ilias Gazdaliev <invimind@gmail.com>
  */
-import get from 'lodash.get'
-import set from 'lodash.set'
+import get from 'lodash/get'
+import set from 'lodash/set'
 import 'reflect-metadata'
 import {
   assertRequired,
@@ -66,7 +66,7 @@ export default function deserialize<T, U extends Array<unknown>>(
         serializableClass,
       })
     if (deserializedValue !== undefined) {
-      set(resultClass, propName, deserializedValue)
+      set(resultClass as Object, propName, deserializedValue)
     }
     propParams.afterDeserialize &&
       propertiesAfterDeserialize.push({
@@ -78,7 +78,7 @@ export default function deserialize<T, U extends Array<unknown>>(
   propertiesAfterDeserialize.forEach(
     ({ propName, deserializedValue, afterDeserialize }) => {
       set(
-        resultClass,
+        resultClass as Object,
         propName,
         afterDeserialize(resultClass, deserializedValue)
       )

@@ -47,9 +47,9 @@
   ],
   "homepage": "https://github.com/Eljoy/ts-jackson#readme",
   "dependencies": {
-    "lodash.get": "^4.4.2",
-    "lodash.set": "^4.3.2",
-    "reflect-metadata": "^0.1.13"
+    "@types/lodash": "^4.17.5",
+    "lodash": "^4.17.21",
+    "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^17.1.0",

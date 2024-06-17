@@ -1,7 +1,7 @@
 /**
  * @author Ilias Gazdaliev <invimind@gmail.com>
  */
-import set from 'lodash.set'
+import set from 'lodash/set'
 import {
   assertSerializable,
   checkSerializable,
