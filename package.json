@@ -48,6 +48,7 @@
   "homepage": "https://github.com/Eljoy/ts-jackson#readme",
   "dependencies": {
     "@types/lodash": "^4.17.5",
+    "fp-ts": "^2.16.9",
     "lodash": "^4.17.21",
     "reflect-metadata": "^0.2.2"
   },
