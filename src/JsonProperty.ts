@@ -53,11 +53,21 @@ export default function JsonProperty<P = unknown>(
         params.type || Reflect.getMetadata('design:type', target, propertyName),
     }
 
-    const existingMetadata: Record<string, JsonPropertyMetadata<P>> =
-      Reflect.getMetadata(
+    // getOwnMetadata + copy: mutating the object returned by getMetadata
+    // would write subclass properties into the parent's metadata record,
+    // leaking them to the parent and its other subclasses.
+    const existingMetadata: Record<
+      string,
+      JsonPropertyMetadata<P>
+    > = Reflect.getOwnMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      target.constructor
+    ) || {
+      ...Reflect.getMetadata(
         ReflectMetaDataKeys.TsJacksonJsonProperty,
         target.constructor
-      ) || {}
+      ),
+    }
 
     existingMetadata[propertyName] = metadata
 

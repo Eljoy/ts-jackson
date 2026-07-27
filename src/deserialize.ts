@@ -29,13 +29,11 @@ export default function deserialize<T, U extends Array<unknown>>(
   ...args: U
 ): T {
   assertSerializable(serializableClass)
-  const propsMetadata: Record<
-    string,
-    JsonPropertyMetadata
-  > = Reflect.getMetadata(
-    ReflectMetaDataKeys.TsJacksonJsonProperty,
-    serializableClass
-  )
+  const propsMetadata: Record<string, JsonPropertyMetadata> =
+    Reflect.getMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      serializableClass
+    )
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
   const propertiesAfterDeserialize: {
@@ -57,7 +55,12 @@ export default function deserialize<T, U extends Array<unknown>>(
       })
     const deserializedValue = propParams.deserialize
       ? propParams.deserialize(jsonValue)
-      : deserializeProperty(jsonValue, propParams.type, propParams.elementType)
+      : deserializeProperty(
+          jsonValue,
+          propParams.type,
+          propParams.elementType,
+          propName
+        )
     propParams.validate &&
       assertValid({
         propName,
@@ -90,14 +93,15 @@ export default function deserialize<T, U extends Array<unknown>>(
 function deserializeProperty(
   value: unknown,
   toType: JsonPropertyMetadata['type'],
-  elementType?: JsonPropertyMetadata['elementType']
+  elementType?: JsonPropertyMetadata['elementType'],
+  propName?: string
 ) {
   if (value === undefined || value === null || toType === undefined) {
     return value
   }
   if (Array.isArray(toType)) {
     return toType.map((toTypeItem, index) => {
-      return deserializeProperty(value[index], toTypeItem)
+      return deserializeProperty(value[index], toTypeItem, undefined, propName)
     })
   }
   if (typeof toType === 'function') {
@@ -105,18 +109,14 @@ function deserializeProperty(
       case Types.Date: {
         return new Date(value as string | number | Date)
       }
-      case Types.Array: {
-        return (value as Record<string, unknown>[]).map((item) => {
-          const isSerializable = checkSerializable(elementType)
-          return isSerializable ? deserialize(item, elementType) : item
-        })
-      }
+      case Types.Array:
       case Types.Set: {
-        const values = (value as Record<string, unknown>[]).map((item) => {
+        assertIsArray(value, toType.name, propName)
+        const values = value.map((item) => {
           const isSerializable = checkSerializable(elementType)
           return isSerializable ? deserialize(item, elementType) : item
         })
-        return new Set(values)
+        return toType.name === Types.Set ? new Set(values) : values
       }
       case Types.Boolean: {
         return Boolean(value)
@@ -134,5 +134,17 @@ function deserializeProperty(
           : value
       }
     }
+  }
+}
+
+function assertIsArray(
+  value: unknown,
+  typeName: string,
+  propName?: string
+): asserts value is unknown[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError(
+      `ts-jackson: property '${propName}' is typed as ${typeName} and expects an array json value, but received ${typeof value}`
+    )
   }
 }

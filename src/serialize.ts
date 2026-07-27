@@ -20,19 +20,17 @@ export default function serialize<T extends new (...args) => unknown>(
   instance: InstanceType<T>
 ): Record<string, unknown> {
   assertSerializable(instance.constructor)
-  const propsMetadata: Record<
-    string,
-    JsonPropertyMetadata
-  > = Reflect.getMetadata(
-    ReflectMetaDataKeys.TsJacksonJsonProperty,
-    instance.constructor
-  )
+  const propsMetadata: Record<string, JsonPropertyMetadata> =
+    Reflect.getMetadata(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      instance.constructor
+    )
   const json = {}
   for (const [propName, propParams] of Object.entries(propsMetadata)) {
     let propertyValue, type
     if (propParams.beforeSerialize) {
       propertyValue = propParams.beforeSerialize(instance[propName])
-      type = propertyValue.constructor
+      type = propertyValue?.constructor
     } else {
       propertyValue = instance[propName]
       type = propParams.type
@@ -52,7 +50,7 @@ export default function serialize<T extends new (...args) => unknown>(
 }
 
 function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
-  if (value === undefined) {
+  if (value === undefined || value === null) {
     return value
   }
   if (Array.isArray(type)) {
@@ -67,7 +65,7 @@ function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
         return Array.from(
           (value as Set<unknown> | Array<unknown>).values()
         ).map((item) => {
-          const isSerializable = checkSerializable(item.constructor)
+          const isSerializable = checkSerializable(item?.constructor)
           return isSerializable ? serialize(item) : item
         })
       }
