@@ -6,6 +6,7 @@ import {
   assertSerializable,
   checkSerializable,
   getClassMetadata,
+  getEffectivePath,
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
@@ -88,7 +89,11 @@ const writeToJson: PipeStep<PropertyContext> = (context) => {
       set(context.json, path, (context.value as unknown[])[index])
     })
   } else {
-    set(context.json, context.propParams.path, context.value)
+    set(
+      context.json,
+      getEffectivePath(context.propParams, context.instance.constructor),
+      context.value
+    )
   }
   return context
 }
@@ -113,10 +118,27 @@ function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
       case Types.Array: {
         return Array.from(
           (value as Set<unknown> | Array<unknown>).values()
-        ).map((item) => {
-          const isSerializable = checkSerializable(item?.constructor)
-          return isSerializable ? serialize(item) : item
+        ).map((item) => serializeItem(item))
+      }
+      case Types.Map: {
+        const result: Record<string, unknown> = {}
+        ;(value as Map<unknown, unknown>).forEach((item, key) => {
+          result[String(key)] = serializeItem(item)
         })
+        return result
+      }
+      case Types.Object: {
+        if (checkSerializable((value as object).constructor)) {
+          return serialize(value as Record<string, unknown>)
+        }
+        if (typeof value !== 'object' || value.constructor !== Object) {
+          return value
+        }
+        const result: Record<string, unknown> = {}
+        for (const [key, item] of Object.entries(value)) {
+          result[key] = serializeItem(item)
+        }
+        return result
       }
       default: {
         const isSerializable = checkSerializable(type)
@@ -126,4 +148,10 @@ function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
       }
     }
   }
+}
+
+function serializeItem(item: unknown) {
+  return checkSerializable((item as object)?.constructor)
+    ? serialize(item as Record<string, unknown>)
+    : item
 }

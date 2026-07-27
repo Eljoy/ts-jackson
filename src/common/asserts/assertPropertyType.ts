@@ -51,9 +51,24 @@ function matchesType(
         Array.isArray(value) &&
         value.every((item) => matchesType(item, elementType))
       )
+    case Types.Map:
+      return (
+        isPlainObjectValue(value) &&
+        Object.values(value).every((item) => matchesType(item, elementType))
+      )
     case Types.Object:
-      return true
+      if (!elementType) {
+        return true
+      }
+      return (
+        isPlainObjectValue(value) &&
+        Object.values(value).every((item) => matchesType(item, elementType))
+      )
     default:
-      return typeof value === 'object' && !Array.isArray(value)
+      return isPlainObjectValue(value)
   }
+}
+
+function isPlainObjectValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

@@ -118,6 +118,50 @@ describe('TC39 standard decorators', () => {
     expect(token.serialize()).toStrictEqual({ access_token: 'tokenValue' })
   })
 
+  test('Map property with explicit type', () => {
+    @Serializable()
+    class Gallery {
+      @JsonProperty({ type: Map, elementType: Image })
+      imagesBySize: Map<string, Image>
+    }
+
+    const gallery = deserialize(
+      { imagesBySize: { small: { url: 'smallUrl' } } },
+      Gallery
+    )
+    expect(gallery.imagesBySize).toBeInstanceOf(Map)
+    expect(gallery.imagesBySize.get('small')).toBeInstanceOf(Image)
+  })
+
+  test('dictionary property with explicit Object type', () => {
+    @Serializable()
+    class Gallery {
+      @JsonProperty({ type: Object, elementType: Image })
+      imagesBySize: Record<string, Image>
+    }
+
+    const gallery = deserialize(
+      { imagesBySize: { small: { url: 'smallUrl' } } },
+      Gallery
+    )
+    expect(gallery.imagesBySize.small).toBeInstanceOf(Image)
+  })
+
+  test('formatPropertyName naming strategy', () => {
+    @Serializable({
+      formatPropertyName: (name) =>
+        name.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`),
+    })
+    class Token {
+      @JsonProperty()
+      accessToken: string
+    }
+
+    const token = deserialize({ access_token: 'tokenValue' }, Token)
+    expect(token.accessToken).toBe('tokenValue')
+    expect(serialize(token)).toStrictEqual({ access_token: 'tokenValue' })
+  })
+
   test('untyped primitive is not coerced without design:type emission', () => {
     @Serializable()
     class Counter {

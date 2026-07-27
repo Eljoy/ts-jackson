@@ -16,6 +16,7 @@ type Params<P> = {
   elementType?: new (...args: any[]) => P extends [] ? P[0] : any
   resolveType?: (json: any) => new (...args: any[]) => any
   validate?: (property: P) => boolean
+  beforeDeserialize?: (jsonValue: any) => any
   deserialize?: (jsonValue: any) => P
   serialize?: (property: P) => any
   afterDeserialize?: (
@@ -29,6 +30,7 @@ type Params<P> = {
 export type JsonPropertyMetadata<P = any> = {
   name: string
   path: string
+  explicitPath: boolean
 } & Params<P>
 
 type JsonPropertyDecorator = ((target: Object, propertyName: string) => void) &
@@ -60,6 +62,7 @@ export default function JsonProperty<P = unknown>(
       const metadata: JsonPropertyMetadata<P> = {
         name: propertyName,
         path: params.path || propertyName,
+        explicitPath: Boolean(params.path),
         ...params,
         type: params.type ?? (params.elementType ? (Array as any) : undefined),
       }
@@ -84,6 +87,7 @@ export default function JsonProperty<P = unknown>(
     const metadata: JsonPropertyMetadata<P> = {
       name: propertyName,
       path: params.path || propertyName,
+      explicitPath: Boolean(params.path),
       ...params,
       type:
         params.type || Reflect.getMetadata('design:type', target, propertyName),

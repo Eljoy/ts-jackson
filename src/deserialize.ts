@@ -11,6 +11,7 @@ import {
   assertValid,
   checkSerializable,
   getClassMetadata,
+  getEffectivePath,
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
@@ -55,6 +56,7 @@ export default function deserialize<T, U extends Array<unknown>>(
       new Pipe<PropertyContext>()
         .add(resolveJsonValue)
         .addIf(propParams.required, assertRequiredValue)
+        .addIf(propParams.beforeDeserialize, applyBeforeDeserialize)
         .addIf(
           propParams.strict && !propParams.deserialize,
           assertValueMatchesType
@@ -90,22 +92,23 @@ export default function deserialize<T, U extends Array<unknown>>(
 }
 
 const resolveJsonValue: PipeStep<PropertyContext> = (context) => {
-  const { jsonObject, propParams } = context
+  const { jsonObject, propParams, serializableClass } = context
   if (propParams.paths) {
     return {
       ...context,
       value: propParams.paths.map((path) => get(jsonObject, path)),
     }
   }
+  const effectivePath = getEffectivePath(propParams, serializableClass)
   if (propParams.pathAlternatives) {
     return {
       ...context,
-      value: [propParams.path, ...propParams.pathAlternatives]
+      value: [effectivePath, ...propParams.pathAlternatives]
         .map((path) => get(jsonObject, path))
         .find((resolvedValue) => resolvedValue != null),
     }
   }
-  return { ...context, value: get(jsonObject, propParams.path) }
+  return { ...context, value: get(jsonObject, effectivePath) }
 }
 
 const assertRequiredValue: PipeStep<PropertyContext> = (context) => {
@@ -114,7 +117,7 @@ const assertRequiredValue: PipeStep<PropertyContext> = (context) => {
     propName: context.propName,
     propValue: context.value,
     serializableClass: context.serializableClass,
-    propPath: context.propParams.path,
+    propPath: getEffectivePath(context.propParams, context.serializableClass),
   })
   return context
 }
@@ -130,6 +133,11 @@ const assertValueMatchesType: PipeStep<PropertyContext> = (context) => {
   })
   return context
 }
+
+const applyBeforeDeserialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.beforeDeserialize(context.value),
+})
 
 const applyCustomDeserialize: PipeStep<PropertyContext> = (context) => ({
   ...context,
@@ -187,13 +195,30 @@ function deserializeProperty(
       case Types.Array:
       case Types.Set: {
         assertIsArray(value, toType.name, propName)
-        const values = value.map((item) => {
-          const itemType = resolveType?.(item) ?? elementType
-          return checkSerializable(itemType)
-            ? deserialize(item as Record<string, unknown>, itemType)
-            : item
-        })
+        const values = value.map((item) =>
+          deserializeItem(item, elementType, resolveType)
+        )
         return toType.name === Types.Set ? new Set(values) : values
+      }
+      case Types.Map: {
+        assertIsObject(value, toType.name, propName)
+        return new Map(
+          Object.entries(value).map(([key, item]) => [
+            key,
+            deserializeItem(item, elementType, resolveType),
+          ])
+        )
+      }
+      case Types.Object: {
+        if (!elementType && !resolveType) {
+          return value
+        }
+        assertIsObject(value, toType.name, propName)
+        const dictionary: Record<string, unknown> = {}
+        for (const [key, item] of Object.entries(value)) {
+          dictionary[key] = deserializeItem(item, elementType, resolveType)
+        }
+        return dictionary
       }
       case Types.Boolean: {
         return Boolean(value)
@@ -214,6 +239,17 @@ function deserializeProperty(
   }
 }
 
+function deserializeItem(
+  item: unknown,
+  elementType?: JsonPropertyMetadata['elementType'],
+  resolveType?: JsonPropertyMetadata['resolveType']
+) {
+  const itemType = resolveType?.(item) ?? elementType
+  return checkSerializable(itemType)
+    ? deserialize(item as Record<string, unknown>, itemType)
+    : item
+}
+
 function assertIsArray(
   value: unknown,
   typeName: string,
@@ -222,6 +258,20 @@ function assertIsArray(
   if (!Array.isArray(value)) {
     throw new TypeError(
       `ts-jackson: property '${propName}' is typed as ${typeName} and expects an array json value, but received ${typeof value}`
+    )
+  }
+}
+
+function assertIsObject(
+  value: unknown,
+  typeName: string,
+  propName?: string
+): asserts value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new TypeError(
+      `ts-jackson: property '${propName}' is typed as ${typeName} and expects an object json value, but received ${
+        Array.isArray(value) ? 'array' : typeof value
+      }`
     )
   }
 }
