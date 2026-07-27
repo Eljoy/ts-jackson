@@ -83,12 +83,24 @@ export default function deserialize<T, U extends Array<unknown>>(
   return resultClass
 }
 
-const resolveJsonValue: PipeStep<PropertyContext> = (context) => ({
-  ...context,
-  value: context.propParams.paths
-    ? context.propParams.paths.map((path) => get(context.jsonObject, path))
-    : get(context.jsonObject, context.propParams.path),
-})
+const resolveJsonValue: PipeStep<PropertyContext> = (context) => {
+  const { jsonObject, propParams } = context
+  if (propParams.paths) {
+    return {
+      ...context,
+      value: propParams.paths.map((path) => get(jsonObject, path)),
+    }
+  }
+  if (propParams.pathAlternatives) {
+    return {
+      ...context,
+      value: [propParams.path, ...propParams.pathAlternatives]
+        .map((path) => get(jsonObject, path))
+        .find((resolvedValue) => resolvedValue != null),
+    }
+  }
+  return { ...context, value: get(jsonObject, propParams.path) }
+}
 
 const assertRequiredValue: PipeStep<PropertyContext> = (context) => {
   assertRequired({

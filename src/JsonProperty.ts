@@ -7,6 +7,7 @@ import { ReflectMetaDataKeys } from './common'
 type Params<P> = {
   path?: string
   paths?: string[]
+  pathAlternatives?: string[]
   required?: boolean
   type?:
     | (new (...args: any[]) => P)
