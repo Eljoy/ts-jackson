@@ -114,7 +114,9 @@ function deserializeProperty(
         assertIsArray(value, toType.name, propName)
         const values = value.map((item) => {
           const isSerializable = checkSerializable(elementType)
-          return isSerializable ? deserialize(item, elementType) : item
+          return isSerializable
+            ? deserialize(item as Record<string, unknown>, elementType)
+            : item
         })
         return toType.name === Types.Set ? new Set(values) : values
       }

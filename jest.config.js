@@ -1,37 +1,12 @@
-const nodeModulesToIgnoreTransform = [
-]
-
+/** @type {import('jest').Config} */
 module.exports = {
   clearMocks: true,
 
-  globals: {
-    window: {}
-  },
-
-  preset: "ts-jest",
-
-  moduleDirectories: [
-    'node_modules'
-  ],
-
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'json', 'node', 'd.ts'],
-
-  transform: {
-    "node_modules/variables/.+\\.(j|t)sx?$": "ts-jest"
-  },
+  preset: 'ts-jest',
 
   testEnvironment: 'node',
 
-  testMatch: [
-    '**/*.test.ts?(x)',
-  ],
+  testMatch: ['**/*.test.ts?(x)'],
 
-  testPathIgnorePatterns: [
-    '/node_modules/',
-  ],
-
-  transformIgnorePatterns: [
-    'node_modules/(?!('+ nodeModulesToIgnoreTransform.join('|')+'))'
-  ],
-};
-
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+}
