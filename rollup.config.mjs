@@ -20,6 +20,12 @@ export default [
         file: pkg.module,
         format: 'esm',
         sourcemap: true,
+        // Node's ESM resolver requires the .js extension for lodash
+        // deep imports since lodash ships without an exports map
+        paths: {
+          'lodash/get': 'lodash/get.js',
+          'lodash/set': 'lodash/set.js',
+        },
       },
     ],
     plugins: [

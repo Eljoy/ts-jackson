@@ -35,9 +35,12 @@ export default function serialize<T extends new (...args) => unknown>(
       propertyValue = instance[propName]
       type = propParams.type
     }
-    const serializedProperty = propParams.serialize
+    let serializedProperty = propParams.serialize
       ? propParams.serialize(propertyValue)
       : serializeProperty(propertyValue, type)
+    if (propParams.afterSerialize) {
+      serializedProperty = propParams.afterSerialize(serializedProperty)
+    }
     if (propParams.paths) {
       propParams.paths.forEach((path, i) => {
         set(json, path, serializedProperty[i])
