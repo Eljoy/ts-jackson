@@ -9,10 +9,21 @@ import {
   assertSerializable,
   assertValid,
   checkSerializable,
+  Pipe,
+  PipeStep,
   ReflectMetaDataKeys,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
+
+type PropertyContext = {
+  jsonObject: Record<string, unknown>
+  propName: string
+  propParams: JsonPropertyMetadata
+  serializableClass: new (...args: any[]) => unknown
+  instance: object
+  value: unknown
+}
 
 /**
  * Function to deserialize json to Serializable class
@@ -36,58 +47,95 @@ export default function deserialize<T, U extends Array<unknown>>(
     )
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
-  const propertiesAfterDeserialize: {
-    propName: string
-    deserializedValue: unknown
-    afterDeserialize: JsonPropertyMetadata['afterDeserialize']
-  }[] = []
-  for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    const jsonValue = propParams.paths
-      ? propParams.paths.map((path) => get(jsonObject, path))
-      : get(jsonObject, propParams.path)
-    propParams.required &&
-      assertRequired({
-        json: jsonObject,
+
+  const processedProperties = Object.entries(propsMetadata).map(
+    ([propName, propParams]) =>
+      buildPropertyPipe(propParams).run({
+        jsonObject,
         propName,
-        propValue: jsonValue,
+        propParams,
         serializableClass,
-        propPath: propParams.path,
+        instance: resultClass as object,
+        value: undefined,
       })
-    const deserializedValue = propParams.deserialize
-      ? propParams.deserialize(jsonValue)
-      : deserializeProperty(
-          jsonValue,
-          propParams.type,
-          propParams.elementType,
-          propName
-        )
-    propParams.validate &&
-      assertValid({
-        propName,
-        propValue: deserializedValue,
-        validate: propParams.validate,
-        serializableClass,
-      })
-    if (deserializedValue !== undefined) {
-      set(resultClass as Object, propName, deserializedValue)
-    }
-    propParams.afterDeserialize &&
-      propertiesAfterDeserialize.push({
-        propName,
-        deserializedValue,
-        afterDeserialize: propParams.afterDeserialize,
-      })
-  }
-  propertiesAfterDeserialize.forEach(
-    ({ propName, deserializedValue, afterDeserialize }) => {
-      set(
-        resultClass as Object,
-        propName,
-        afterDeserialize(resultClass, deserializedValue)
-      )
-    }
   )
+
+  // afterDeserialize hooks receive the fully populated instance,
+  // so they run only once every property pipe has completed
+  processedProperties
+    .filter(({ propParams }) => propParams.afterDeserialize)
+    .forEach(({ propName, propParams, value }) => {
+      set(
+        resultClass as object,
+        propName,
+        propParams.afterDeserialize(resultClass, value)
+      )
+    })
+
   return resultClass
+}
+
+function buildPropertyPipe(
+  propParams: JsonPropertyMetadata
+): Pipe<PropertyContext> {
+  return new Pipe<PropertyContext>()
+    .add(resolveJsonValue)
+    .addIf(propParams.required, assertRequiredValue)
+    .add(
+      propParams.deserialize ? applyCustomDeserialize : applyDefaultDeserialize
+    )
+    .addIf(propParams.validate, assertValidValue)
+    .add(assignToInstance)
+}
+
+const resolveJsonValue: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.paths
+    ? context.propParams.paths.map((path) => get(context.jsonObject, path))
+    : get(context.jsonObject, context.propParams.path),
+})
+
+const assertRequiredValue: PipeStep<PropertyContext> = (context) => {
+  assertRequired({
+    json: context.jsonObject,
+    propName: context.propName,
+    propValue: context.value,
+    serializableClass: context.serializableClass,
+    propPath: context.propParams.path,
+  })
+  return context
+}
+
+const applyCustomDeserialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.deserialize(context.value),
+})
+
+const applyDefaultDeserialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: deserializeProperty(
+    context.value,
+    context.propParams.type,
+    context.propParams.elementType,
+    context.propName
+  ),
+})
+
+const assertValidValue: PipeStep<PropertyContext> = (context) => {
+  assertValid({
+    propName: context.propName,
+    propValue: context.value,
+    validate: context.propParams.validate,
+    serializableClass: context.serializableClass,
+  })
+  return context
+}
+
+const assignToInstance: PipeStep<PropertyContext> = (context) => {
+  if (context.value !== undefined) {
+    set(context.instance, context.propName, context.value)
+  }
+  return context
 }
 
 function deserializeProperty(
