@@ -42,6 +42,15 @@ export default function deserialize<T, U extends Array<unknown>>(
   serializableClass: new (...args: [...U]) => T,
   ...args: U
 ): T {
+  return deserializeInternal(json, serializableClass, args)
+}
+
+export function deserializeInternal<T, U extends Array<unknown>>(
+  json: Record<string, unknown> | string,
+  serializableClass: new (...args: [...U]) => T,
+  args: U,
+  onPropertyError?: (error: Error) => void
+): T {
   assertSerializable(serializableClass)
   const propsMetadata =
     getClassMetadata<Record<string, JsonPropertyMetadata>>(
@@ -51,44 +60,64 @@ export default function deserialize<T, U extends Array<unknown>>(
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
 
-  const processedProperties = Object.entries(propsMetadata).map(
-    ([propName, propParams]) =>
-      new Pipe<PropertyContext>()
-        .add(resolveJsonValue)
-        .addIf(propParams.required, assertRequiredValue)
-        .addIf(propParams.beforeDeserialize, applyBeforeDeserialize)
-        .addIf(
-          propParams.strict && !propParams.deserialize,
-          assertValueMatchesType
-        )
-        .add(
-          propParams.deserialize
-            ? applyCustomDeserialize
-            : applyDefaultDeserialize
-        )
-        .addIf(propParams.validate, assertValidValue)
-        .add(assignToInstance)
-        .run({
-          jsonObject,
-          propName,
-          propParams,
-          serializableClass,
-          instance: resultClass as object,
-          value: undefined,
-        })
-  )
+  const processedProperties = Object.entries(propsMetadata)
+    .map(([propName, propParams]) =>
+      collectingErrors(onPropertyError, () =>
+        new Pipe<PropertyContext>()
+          .add(resolveJsonValue)
+          .addIf(propParams.required, assertRequiredValue)
+          .addIf(propParams.beforeDeserialize, applyBeforeDeserialize)
+          .addIf(
+            propParams.strict && !propParams.deserialize,
+            assertValueMatchesType
+          )
+          .add(
+            propParams.deserialize
+              ? applyCustomDeserialize
+              : applyDefaultDeserialize
+          )
+          .addIf(propParams.validate, assertValidValue)
+          .add(assignToInstance)
+          .run({
+            jsonObject,
+            propName,
+            propParams,
+            serializableClass,
+            instance: resultClass as object,
+            value: undefined,
+          })
+      )
+    )
+    .filter((context): context is PropertyContext => context !== undefined)
 
   processedProperties
     .filter(({ propParams }) => propParams.afterDeserialize)
     .forEach(({ propName, propParams, value }) => {
-      set(
-        resultClass as object,
-        propName,
-        propParams.afterDeserialize(resultClass, value)
+      collectingErrors(onPropertyError, () =>
+        set(
+          resultClass as object,
+          propName,
+          propParams.afterDeserialize(resultClass, value)
+        )
       )
     })
 
   return resultClass
+}
+
+function collectingErrors<R>(
+  onPropertyError: ((error: Error) => void) | undefined,
+  run: () => R
+): R | undefined {
+  if (!onPropertyError) {
+    return run()
+  }
+  try {
+    return run()
+  } catch (error) {
+    onPropertyError(error as Error)
+    return undefined
+  }
 }
 
 const resolveJsonValue: PipeStep<PropertyContext> = (context) => {

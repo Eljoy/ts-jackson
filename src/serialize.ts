@@ -32,6 +32,13 @@ type PropertyContext = {
 export default function serialize<T extends new (...args) => unknown>(
   instance: InstanceType<T>
 ): Record<string, unknown> {
+  return serializeInternal(instance)
+}
+
+export function serializeInternal<T extends new (...args) => unknown>(
+  instance: InstanceType<T>,
+  onPropertyError?: (error: Error) => void
+): Record<string, unknown> {
   assertSerializable(instance.constructor)
   const propsMetadata =
     getClassMetadata<Record<string, JsonPropertyMetadata>>(
@@ -39,21 +46,33 @@ export default function serialize<T extends new (...args) => unknown>(
       instance.constructor
     ) || {}
   const json = {}
-  Object.entries(propsMetadata).forEach(([propName, propParams]) =>
-    new Pipe<PropertyContext>()
-      .add(resolveInstanceValue)
-      .addIf(propParams.beforeSerialize, applyBeforeSerialize)
-      .add(propParams.serialize ? applyCustomSerialize : applyDefaultSerialize)
-      .addIf(propParams.afterSerialize, applyAfterSerialize)
-      .add(writeToJson)
-      .run({
-        json,
-        propName,
-        propParams,
-        instance: instance as object,
-        value: undefined,
-      })
-  )
+  Object.entries(propsMetadata).forEach(([propName, propParams]) => {
+    const runPipe = () =>
+      new Pipe<PropertyContext>()
+        .add(resolveInstanceValue)
+        .addIf(propParams.beforeSerialize, applyBeforeSerialize)
+        .add(
+          propParams.serialize ? applyCustomSerialize : applyDefaultSerialize
+        )
+        .addIf(propParams.afterSerialize, applyAfterSerialize)
+        .add(writeToJson)
+        .run({
+          json,
+          propName,
+          propParams,
+          instance: instance as object,
+          value: undefined,
+        })
+    if (!onPropertyError) {
+      runPipe()
+      return
+    }
+    try {
+      runPipe()
+    } catch (error) {
+      onPropertyError(error as Error)
+    }
+  })
   return json
 }
 
