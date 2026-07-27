@@ -9,6 +9,7 @@ type Params<P> = {
   paths?: string[]
   pathAlternatives?: string[]
   required?: boolean
+  strict?: boolean
   type?:
     | (new (...args: any[]) => P)
     | { [K in keyof P]: new (...args: any[]) => P[K] }

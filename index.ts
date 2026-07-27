@@ -1,6 +1,7 @@
 export {
   RequiredPropertyError,
   SerializableError,
+  TypeMismatchError,
   ValidatePropertyError,
 } from './src/common/errors'
 export { default as deserialize } from './src/deserialize'

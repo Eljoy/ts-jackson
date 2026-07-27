@@ -5,6 +5,7 @@ import get from 'lodash/get'
 import set from 'lodash/set'
 import 'reflect-metadata'
 import {
+  assertPropertyType,
   assertRequired,
   assertSerializable,
   assertValid,
@@ -54,6 +55,10 @@ export default function deserialize<T, U extends Array<unknown>>(
       new Pipe<PropertyContext>()
         .add(resolveJsonValue)
         .addIf(propParams.required, assertRequiredValue)
+        .addIf(
+          propParams.strict && !propParams.deserialize,
+          assertValueMatchesType
+        )
         .add(
           propParams.deserialize
             ? applyCustomDeserialize
@@ -110,6 +115,18 @@ const assertRequiredValue: PipeStep<PropertyContext> = (context) => {
     propValue: context.value,
     serializableClass: context.serializableClass,
     propPath: context.propParams.path,
+  })
+  return context
+}
+
+const assertValueMatchesType: PipeStep<PropertyContext> = (context) => {
+  assertPropertyType({
+    propName: context.propName,
+    propPath: context.propParams.path,
+    propValue: context.value,
+    type: context.propParams.type,
+    elementType: context.propParams.elementType,
+    serializableClass: context.serializableClass,
   })
   return context
 }
