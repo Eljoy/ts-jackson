@@ -5,14 +5,31 @@ import get from 'lodash/get'
 import set from 'lodash/set'
 import 'reflect-metadata'
 import {
+  assertPropertyType,
   assertRequired,
   assertSerializable,
   assertValid,
   checkSerializable,
+  getClassMetadata,
+  getEffectivePath,
+  Pipe,
+  PipeStep,
   ReflectMetaDataKeys,
+  resolveLazyType,
+  TypeMismatchError,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
+import type { SerializableMetadata } from './Serializable'
+
+type PropertyContext = {
+  jsonObject: Record<string, unknown>
+  propName: string
+  propParams: JsonPropertyMetadata
+  serializableClass: new (...args: any[]) => unknown
+  instance: object
+  value: unknown
+}
 
 /**
  * Function to deserialize json to Serializable class
@@ -28,76 +45,191 @@ export default function deserialize<T, U extends Array<unknown>>(
   serializableClass: new (...args: [...U]) => T,
   ...args: U
 ): T {
+  return deserializeInternal(json, serializableClass, args)
+}
+
+export function deserializeInternal<T, U extends Array<unknown>>(
+  json: Record<string, unknown> | string,
+  serializableClass: new (...args: [...U]) => T,
+  args: U,
+  onPropertyError?: (error: Error) => void
+): T {
   assertSerializable(serializableClass)
-  const propsMetadata: Record<
-    string,
-    JsonPropertyMetadata
-  > = Reflect.getMetadata(
-    ReflectMetaDataKeys.TsJacksonJsonProperty,
-    serializableClass
-  )
+  const propsMetadata =
+    getClassMetadata<Record<string, JsonPropertyMetadata>>(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      serializableClass
+    ) || {}
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
-  const propertiesAfterDeserialize: {
-    propName: string
-    deserializedValue: unknown
-    afterDeserialize: JsonPropertyMetadata['afterDeserialize']
-  }[] = []
-  for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    const jsonValue = propParams.paths
-      ? propParams.paths.map((path) => get(jsonObject, path))
-      : get(jsonObject, propParams.path)
-    propParams.required &&
-      assertRequired({
-        json: jsonObject,
-        propName,
-        propValue: jsonValue,
-        serializableClass,
-        propPath: propParams.path,
-      })
-    const deserializedValue = propParams.deserialize
-      ? propParams.deserialize(jsonValue)
-      : deserializeProperty(jsonValue, propParams.type, propParams.elementType)
-    propParams.validate &&
-      assertValid({
-        propName,
-        propValue: deserializedValue,
-        validate: propParams.validate,
-        serializableClass,
-      })
-    if (deserializedValue !== undefined) {
-      set(resultClass as Object, propName, deserializedValue)
-    }
-    propParams.afterDeserialize &&
-      propertiesAfterDeserialize.push({
-        propName,
-        deserializedValue,
-        afterDeserialize: propParams.afterDeserialize,
-      })
-  }
-  propertiesAfterDeserialize.forEach(
-    ({ propName, deserializedValue, afterDeserialize }) => {
-      set(
-        resultClass as Object,
-        propName,
-        afterDeserialize(resultClass, deserializedValue)
-      )
-    }
+  const classMetadata = getClassMetadata<SerializableMetadata>(
+    ReflectMetaDataKeys.TsJacksonSerializable,
+    serializableClass
   )
+
+  const processedProperties = Object.entries(propsMetadata)
+    .filter(([, propParams]) => propParams.access !== 'serialize-only')
+    .map(([propName, propParams]) =>
+      collectingErrors(onPropertyError, () =>
+        new Pipe<PropertyContext>()
+          .add(resolveJsonValue)
+          .addIf('default' in propParams, applyDefaultValue)
+          .addIf(propParams.required, assertRequiredValue)
+          .addIf(propParams.beforeDeserialize, applyBeforeDeserialize)
+          .addIf(
+            (propParams.strict ?? classMetadata?.strict) &&
+              !propParams.deserialize,
+            assertValueMatchesType
+          )
+          .add(
+            propParams.deserialize
+              ? applyCustomDeserialize
+              : applyDefaultDeserialize
+          )
+          .addIf(propParams.validate, assertValidValue)
+          .add(assignToInstance)
+          .run({
+            jsonObject,
+            propName,
+            propParams,
+            serializableClass,
+            instance: resultClass as object,
+            value: undefined,
+          })
+      )
+    )
+    .filter((context): context is PropertyContext => context !== undefined)
+
+  processedProperties
+    .filter(({ propParams }) => propParams.afterDeserialize)
+    .forEach(({ propName, propParams, value }) => {
+      collectingErrors(onPropertyError, () =>
+        set(
+          resultClass as object,
+          propName,
+          propParams.afterDeserialize(resultClass, value)
+        )
+      )
+    })
+
   return resultClass
+}
+
+function collectingErrors<R>(
+  onPropertyError: ((error: Error) => void) | undefined,
+  run: () => R
+): R | undefined {
+  if (!onPropertyError) {
+    return run()
+  }
+  try {
+    return run()
+  } catch (error) {
+    onPropertyError(error as Error)
+    return undefined
+  }
+}
+
+const resolveJsonValue: PipeStep<PropertyContext> = (context) => {
+  const { jsonObject, propParams, serializableClass } = context
+  if (propParams.paths) {
+    return {
+      ...context,
+      value: propParams.paths.map((path) => get(jsonObject, path)),
+    }
+  }
+  const effectivePath = getEffectivePath(propParams, serializableClass)
+  if (propParams.pathAlternatives) {
+    return {
+      ...context,
+      value: [effectivePath, ...propParams.pathAlternatives]
+        .map((path) => get(jsonObject, path))
+        .find((resolvedValue) => resolvedValue != null),
+    }
+  }
+  return { ...context, value: get(jsonObject, effectivePath) }
+}
+
+const assertRequiredValue: PipeStep<PropertyContext> = (context) => {
+  assertRequired({
+    json: context.jsonObject,
+    propName: context.propName,
+    propValue: context.value,
+    serializableClass: context.serializableClass,
+    propPath: getEffectivePath(context.propParams, context.serializableClass),
+  })
+  return context
+}
+
+const assertValueMatchesType: PipeStep<PropertyContext> = (context) => {
+  assertPropertyType({
+    propName: context.propName,
+    propPath: context.propParams.path,
+    propValue: context.value,
+    type: context.propParams.type,
+    elementType: context.propParams.elementType,
+    serializableClass: context.serializableClass,
+  })
+  return context
+}
+
+const applyDefaultValue: PipeStep<PropertyContext> = (context) =>
+  context.value === undefined
+    ? { ...context, value: context.propParams.default }
+    : context
+
+const applyBeforeDeserialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.beforeDeserialize(context.value),
+})
+
+const applyCustomDeserialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.deserialize(context.value),
+})
+
+const applyDefaultDeserialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: deserializeProperty(
+    context.value,
+    context.propParams.type,
+    context.propParams.elementType,
+    context.propName,
+    context.propParams.resolveType
+  ),
+})
+
+const assertValidValue: PipeStep<PropertyContext> = (context) => {
+  assertValid({
+    propName: context.propName,
+    propValue: context.value,
+    validate: context.propParams.validate,
+    serializableClass: context.serializableClass,
+  })
+  return context
+}
+
+const assignToInstance: PipeStep<PropertyContext> = (context) => {
+  if (context.value !== undefined) {
+    set(context.instance, context.propName, context.value)
+  }
+  return context
 }
 
 function deserializeProperty(
   value: unknown,
-  toType: JsonPropertyMetadata['type'],
-  elementType?: JsonPropertyMetadata['elementType']
+  typeRef: JsonPropertyMetadata['type'],
+  elementType?: JsonPropertyMetadata['elementType'],
+  propName?: string,
+  resolveType?: JsonPropertyMetadata['resolveType']
 ) {
+  const toType = resolveLazyType(typeRef)
   if (value === undefined || value === null || toType === undefined) {
     return value
   }
   if (Array.isArray(toType)) {
     return toType.map((toTypeItem, index) => {
-      return deserializeProperty(value[index], toTypeItem)
+      return deserializeProperty(value[index], toTypeItem, undefined, propName)
     })
   }
   if (typeof toType === 'function') {
@@ -105,18 +237,33 @@ function deserializeProperty(
       case Types.Date: {
         return new Date(value as string | number | Date)
       }
-      case Types.Array: {
-        return (value as Record<string, unknown>[]).map((item) => {
-          const isSerializable = checkSerializable(elementType)
-          return isSerializable ? deserialize(item, elementType) : item
-        })
-      }
+      case Types.Array:
       case Types.Set: {
-        const values = (value as Record<string, unknown>[]).map((item) => {
-          const isSerializable = checkSerializable(elementType)
-          return isSerializable ? deserialize(item, elementType) : item
-        })
-        return new Set(values)
+        assertIsArray(value, toType.name, propName)
+        const values = value.map((item) =>
+          deserializeItem(item, elementType, resolveType)
+        )
+        return toType.name === Types.Set ? new Set(values) : values
+      }
+      case Types.Map: {
+        assertIsObject(value, toType.name, propName)
+        return new Map(
+          Object.entries(value).map(([key, item]) => [
+            key,
+            deserializeItem(item, elementType, resolveType),
+          ])
+        )
+      }
+      case Types.Object: {
+        if (!elementType && !resolveType) {
+          return value
+        }
+        assertIsObject(value, toType.name, propName)
+        const dictionary: Record<string, unknown> = {}
+        for (const [key, item] of Object.entries(value)) {
+          dictionary[key] = deserializeItem(item, elementType, resolveType)
+        }
+        return dictionary
       }
       case Types.Boolean: {
         return Boolean(value)
@@ -128,11 +275,53 @@ function deserializeProperty(
         return value.toString()
       }
       default: {
-        const isSerializable = checkSerializable(toType)
-        return isSerializable
-          ? deserialize(value as Record<string, unknown>, toType)
+        const concreteType = (resolveType?.(value) ?? toType) as new (
+          ...args: any[]
+        ) => any
+        return checkSerializable(concreteType)
+          ? deserialize(value as Record<string, unknown>, concreteType)
           : value
       }
     }
+  }
+}
+
+function deserializeItem(
+  item: unknown,
+  elementType?: JsonPropertyMetadata['elementType'],
+  resolveType?: JsonPropertyMetadata['resolveType']
+) {
+  const itemType = (resolveType?.(item) ?? resolveLazyType(elementType)) as
+    (new (...args: any[]) => any) | undefined
+  return checkSerializable(itemType)
+    ? deserialize(item as Record<string, unknown>, itemType)
+    : item
+}
+
+function assertIsArray(
+  value: unknown,
+  typeName: string,
+  propName?: string
+): asserts value is unknown[] {
+  if (!Array.isArray(value)) {
+    throw new TypeMismatchError({
+      propName,
+      propValue: value,
+      expected: typeName,
+    })
+  }
+}
+
+function assertIsObject(
+  value: unknown,
+  typeName: string,
+  propName?: string
+): asserts value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new TypeMismatchError({
+      propName,
+      propValue: value,
+      expected: typeName,
+    })
   }
 }
