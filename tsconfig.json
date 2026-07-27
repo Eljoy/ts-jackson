@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "es5",
     "outDir": "./dist",
     "strictFunctionTypes": false,
     "lib": [
-      "ES2017"
+      "es2015"
     ],
-    "sourceMap": true,
-    "types": ["jest", "node"],
+    "sourceMap": false,
     "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
