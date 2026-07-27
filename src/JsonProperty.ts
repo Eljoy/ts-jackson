@@ -42,8 +42,8 @@ export default function JsonProperty<P = unknown>(
       typeof arg === 'string'
         ? { path: arg }
         : Array.isArray(arg)
-        ? { paths: arg }
-        : arg
+          ? { paths: arg }
+          : arg
 
     const metadata: JsonPropertyMetadata<P> = {
       name: propertyName,
@@ -53,9 +53,6 @@ export default function JsonProperty<P = unknown>(
         params.type || Reflect.getMetadata('design:type', target, propertyName),
     }
 
-    // getOwnMetadata + copy: mutating the object returned by getMetadata
-    // would write subclass properties into the parent's metadata record,
-    // leaking them to the parent and its other subclasses.
     const existingMetadata: Record<
       string,
       JsonPropertyMetadata<P>

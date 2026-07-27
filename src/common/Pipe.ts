@@ -1,10 +1,5 @@
 export type PipeStep<Context> = (context: Context) => Context
 
-/**
- * Minimal pipe builder. Steps are registered up front — conditionally
- * via addIf — and executed in registration order on run, each step
- * receiving the context returned by the previous one.
- */
 export default class Pipe<Context> {
   private readonly steps: Array<PipeStep<Context>> = []
 

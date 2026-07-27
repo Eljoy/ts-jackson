@@ -60,8 +60,6 @@ export default function deserialize<T, U extends Array<unknown>>(
       })
   )
 
-  // afterDeserialize hooks receive the fully populated instance,
-  // so they run only once every property pipe has completed
   processedProperties
     .filter(({ propParams }) => propParams.afterDeserialize)
     .forEach(({ propName, propParams, value }) => {
