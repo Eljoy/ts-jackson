@@ -19,6 +19,7 @@
     "postbuild": "npm run tsc-release",
     "tsc-release": "tsc -p ts-config.release.json",
     "lint": "eslint src index.ts",
+    "prepublishOnly": "npm run build",
     "test": "jest",
     "watch": "tsc --watch",
     "prepare": "husky"
