@@ -35,7 +35,7 @@ export default function serialize<T extends new (...args) => unknown>(
     Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       instance.constructor
-    )
+    ) || {}
   const json = {}
   Object.entries(propsMetadata).forEach(([propName, propParams]) =>
     new Pipe<PropertyContext>()

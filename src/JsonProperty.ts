@@ -13,6 +13,7 @@ type Params<P> = {
     | (new (...args: any[]) => P)
     | { [K in keyof P]: new (...args: any[]) => P[K] }
   elementType?: new (...args: any[]) => P extends [] ? P[0] : any
+  resolveType?: (json: any) => new (...args: any[]) => any
   validate?: (property: P) => boolean
   deserialize?: (jsonValue: any) => P
   serialize?: (property: P) => any

@@ -44,7 +44,7 @@ export default function deserialize<T, U extends Array<unknown>>(
     Reflect.getMetadata(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       serializableClass
-    )
+    ) || {}
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
 
@@ -124,7 +124,8 @@ const applyDefaultDeserialize: PipeStep<PropertyContext> = (context) => ({
     context.value,
     context.propParams.type,
     context.propParams.elementType,
-    context.propName
+    context.propName,
+    context.propParams.resolveType
   ),
 })
 
@@ -149,7 +150,8 @@ function deserializeProperty(
   value: unknown,
   toType: JsonPropertyMetadata['type'],
   elementType?: JsonPropertyMetadata['elementType'],
-  propName?: string
+  propName?: string,
+  resolveType?: JsonPropertyMetadata['resolveType']
 ) {
   if (value === undefined || value === null || toType === undefined) {
     return value
@@ -168,9 +170,9 @@ function deserializeProperty(
       case Types.Set: {
         assertIsArray(value, toType.name, propName)
         const values = value.map((item) => {
-          const isSerializable = checkSerializable(elementType)
-          return isSerializable
-            ? deserialize(item as Record<string, unknown>, elementType)
+          const itemType = resolveType?.(item) ?? elementType
+          return checkSerializable(itemType)
+            ? deserialize(item as Record<string, unknown>, itemType)
             : item
         })
         return toType.name === Types.Set ? new Set(values) : values
@@ -185,9 +187,9 @@ function deserializeProperty(
         return value.toString()
       }
       default: {
-        const isSerializable = checkSerializable(toType)
-        return isSerializable
-          ? deserialize(value as Record<string, unknown>, toType)
+        const concreteType = resolveType?.(value) ?? toType
+        return checkSerializable(concreteType)
+          ? deserialize(value as Record<string, unknown>, concreteType)
           : value
       }
     }
