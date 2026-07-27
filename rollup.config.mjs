@@ -1,6 +1,5 @@
 import commonjs from '@rollup/plugin-commonjs'
 import resolve from '@rollup/plugin-node-resolve'
-import terser from '@rollup/plugin-terser'
 import typescript from '@rollup/plugin-typescript'
 import { createRequire } from 'node:module'
 
@@ -33,7 +32,6 @@ export default [
         exclude: 'node_modules',
         ignoreGlobal: true,
       }),
-      terser(),
     ],
     external: [/^lodash/, 'reflect-metadata', 'tslib'],
   },
