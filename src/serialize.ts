@@ -5,10 +5,21 @@ import set from 'lodash/set'
 import {
   assertSerializable,
   checkSerializable,
+  Pipe,
+  PipeStep,
   ReflectMetaDataKeys,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
+
+type PropertyContext = {
+  json: Record<string, unknown>
+  propName: string
+  propParams: JsonPropertyMetadata
+  instance: object
+  value: unknown
+  type?: JsonPropertyMetadata['type']
+}
 
 /**
  * Function to serialize Serializable class to json
@@ -26,30 +37,59 @@ export default function serialize<T extends new (...args) => unknown>(
       instance.constructor
     )
   const json = {}
-  for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    let propertyValue, type
-    if (propParams.beforeSerialize) {
-      propertyValue = propParams.beforeSerialize(instance[propName])
-      type = propertyValue?.constructor
-    } else {
-      propertyValue = instance[propName]
-      type = propParams.type
-    }
-    let serializedProperty = propParams.serialize
-      ? propParams.serialize(propertyValue)
-      : serializeProperty(propertyValue, type)
-    if (propParams.afterSerialize) {
-      serializedProperty = propParams.afterSerialize(serializedProperty)
-    }
-    if (propParams.paths) {
-      propParams.paths.forEach((path, i) => {
-        set(json, path, serializedProperty[i])
+  Object.entries(propsMetadata).forEach(([propName, propParams]) =>
+    new Pipe<PropertyContext>()
+      .add(resolveInstanceValue)
+      .addIf(propParams.beforeSerialize, applyBeforeSerialize)
+      .add(propParams.serialize ? applyCustomSerialize : applyDefaultSerialize)
+      .addIf(propParams.afterSerialize, applyAfterSerialize)
+      .add(writeToJson)
+      .run({
+        json,
+        propName,
+        propParams,
+        instance: instance as object,
+        value: undefined,
       })
-    } else {
-      set(json, propParams.path, serializedProperty)
-    }
-  }
+  )
   return json
+}
+
+const resolveInstanceValue: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.instance[context.propName],
+  type: context.propParams.type,
+})
+
+const applyBeforeSerialize: PipeStep<PropertyContext> = (context) => {
+  const value = context.propParams.beforeSerialize(context.value)
+  return { ...context, value, type: value?.constructor }
+}
+
+const applyCustomSerialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.serialize(context.value),
+})
+
+const applyDefaultSerialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: serializeProperty(context.value, context.type),
+})
+
+const applyAfterSerialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.afterSerialize(context.value),
+})
+
+const writeToJson: PipeStep<PropertyContext> = (context) => {
+  if (context.propParams.paths) {
+    context.propParams.paths.forEach((path, index) => {
+      set(context.json, path, (context.value as unknown[])[index])
+    })
+  } else {
+    set(context.json, context.propParams.path, context.value)
+  }
+  return context
 }
 
 function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
