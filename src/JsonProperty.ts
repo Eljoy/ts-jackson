@@ -4,17 +4,21 @@ import { ReflectMetaDataKeys } from './common'
 /**
  * Type definition for JsonProperty parameters.
  */
+type Constructor<T> = new (...args: any[]) => T
+
+type TypeRef<T> = Constructor<T> | (() => Constructor<T>)
+
 type Params<P> = {
   path?: string
   paths?: string[]
   pathAlternatives?: string[]
   required?: boolean
   strict?: boolean
-  type?:
-    | (new (...args: any[]) => P)
-    | { [K in keyof P]: new (...args: any[]) => P[K] }
-  elementType?: new (...args: any[]) => P extends [] ? P[0] : any
-  resolveType?: (json: any) => new (...args: any[]) => any
+  default?: any
+  access?: 'deserialize-only' | 'serialize-only'
+  type?: TypeRef<P> | { [K in keyof P]: Constructor<P[K]> }
+  elementType?: TypeRef<P extends [] ? P[0] : any>
+  resolveType?: (json: any) => Constructor<any>
   validate?: (property: P) => boolean
   beforeDeserialize?: (jsonValue: any) => any
   deserialize?: (jsonValue: any) => P

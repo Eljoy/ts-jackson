@@ -10,6 +10,7 @@ import {
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
+  resolveLazyType,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
@@ -47,6 +48,9 @@ export function serializeInternal<T extends new (...args) => unknown>(
     ) || {}
   const json = {}
   Object.entries(propsMetadata).forEach(([propName, propParams]) => {
+    if (propParams.access === 'deserialize-only') {
+      return
+    }
     const runPipe = () =>
       new Pipe<PropertyContext>()
         .add(resolveInstanceValue)
@@ -117,7 +121,11 @@ const writeToJson: PipeStep<PropertyContext> = (context) => {
   return context
 }
 
-function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
+function serializeProperty(
+  value: unknown,
+  typeRef: JsonPropertyMetadata['type']
+) {
+  const type = resolveLazyType(typeRef)
   if (value === undefined || value === null) {
     return value
   }

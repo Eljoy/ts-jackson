@@ -15,10 +15,12 @@ import {
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
+  resolveLazyType,
   TypeMismatchError,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
+import type { SerializableMetadata } from './Serializable'
 
 type PropertyContext = {
   jsonObject: Record<string, unknown>
@@ -60,16 +62,23 @@ export function deserializeInternal<T, U extends Array<unknown>>(
     ) || {}
   const resultClass = new serializableClass(...args)
   const jsonObject = typeof json === 'string' ? JSON.parse(json) : json
+  const classMetadata = getClassMetadata<SerializableMetadata>(
+    ReflectMetaDataKeys.TsJacksonSerializable,
+    serializableClass
+  )
 
   const processedProperties = Object.entries(propsMetadata)
+    .filter(([, propParams]) => propParams.access !== 'serialize-only')
     .map(([propName, propParams]) =>
       collectingErrors(onPropertyError, () =>
         new Pipe<PropertyContext>()
           .add(resolveJsonValue)
+          .addIf('default' in propParams, applyDefaultValue)
           .addIf(propParams.required, assertRequiredValue)
           .addIf(propParams.beforeDeserialize, applyBeforeDeserialize)
           .addIf(
-            propParams.strict && !propParams.deserialize,
+            (propParams.strict ?? classMetadata?.strict) &&
+              !propParams.deserialize,
             assertValueMatchesType
           )
           .add(
@@ -164,6 +173,11 @@ const assertValueMatchesType: PipeStep<PropertyContext> = (context) => {
   return context
 }
 
+const applyDefaultValue: PipeStep<PropertyContext> = (context) =>
+  context.value === undefined
+    ? { ...context, value: context.propParams.default }
+    : context
+
 const applyBeforeDeserialize: PipeStep<PropertyContext> = (context) => ({
   ...context,
   value: context.propParams.beforeDeserialize(context.value),
@@ -204,11 +218,12 @@ const assignToInstance: PipeStep<PropertyContext> = (context) => {
 
 function deserializeProperty(
   value: unknown,
-  toType: JsonPropertyMetadata['type'],
+  typeRef: JsonPropertyMetadata['type'],
   elementType?: JsonPropertyMetadata['elementType'],
   propName?: string,
   resolveType?: JsonPropertyMetadata['resolveType']
 ) {
+  const toType = resolveLazyType(typeRef)
   if (value === undefined || value === null || toType === undefined) {
     return value
   }
@@ -260,7 +275,9 @@ function deserializeProperty(
         return value.toString()
       }
       default: {
-        const concreteType = resolveType?.(value) ?? toType
+        const concreteType = (resolveType?.(value) ?? toType) as new (
+          ...args: any[]
+        ) => any
         return checkSerializable(concreteType)
           ? deserialize(value as Record<string, unknown>, concreteType)
           : value
@@ -274,7 +291,8 @@ function deserializeItem(
   elementType?: JsonPropertyMetadata['elementType'],
   resolveType?: JsonPropertyMetadata['resolveType']
 ) {
-  const itemType = resolveType?.(item) ?? elementType
+  const itemType = (resolveType?.(item) ?? resolveLazyType(elementType)) as
+    (new (...args: any[]) => any) | undefined
   return checkSerializable(itemType)
     ? deserialize(item as Record<string, unknown>, itemType)
     : item

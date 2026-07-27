@@ -1,5 +1,6 @@
 import type { JsonPropertyMetadata } from '../../JsonProperty'
 import TypeMismatchError from '../errors/TypeMismatchError'
+import resolveLazyType from '../resolveLazyType'
 import { Types } from '../Types'
 
 type Params = {
@@ -12,8 +13,10 @@ type Params = {
 }
 
 export default function assertPropertyType(params: Params): void {
-  if (!matchesType(params.propValue, params.type, params.elementType)) {
-    throw new TypeMismatchError(params)
+  const type = resolveLazyType(params.type)
+  const elementType = resolveLazyType(params.elementType)
+  if (!matchesType(params.propValue, type, elementType)) {
+    throw new TypeMismatchError({ ...params, type })
   }
 }
 

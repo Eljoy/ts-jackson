@@ -138,6 +138,40 @@ describe('Strict type checking', () => {
     expect(() => deserialize({ id: 42 }, Track)).toThrow(TypeMismatchError)
   })
 
+  describe('class-level strict', () => {
+    @Serializable({ strict: true })
+    class Person {
+      @JsonProperty()
+      age: number
+
+      @JsonProperty({ strict: false })
+      shoeSize: number
+    }
+
+    test('applies to every property without a per-property setting', () => {
+      expect(() => deserialize({ age: '30' }, Person)).toThrow(
+        TypeMismatchError
+      )
+      expect(deserialize({ age: 30 }, Person).age).toBe(30)
+    })
+
+    test('per-property strict false opts out', () => {
+      expect(deserialize({ shoeSize: '42' }, Person).shoeSize).toBe(42)
+    })
+
+    test('subclasses inherit class-level strict', () => {
+      @Serializable()
+      class Employee extends Person {
+        @JsonProperty()
+        salary: number
+      }
+
+      expect(() => deserialize({ salary: 'lots' }, Employee)).toThrow(
+        TypeMismatchError
+      )
+    })
+  })
+
   test('custom deserialize bypasses strict checks', () => {
     @Serializable()
     class Track {

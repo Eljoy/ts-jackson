@@ -3,6 +3,7 @@ import { ReflectMetaDataKeys } from './common'
 
 export type SerializableParams = {
   formatPropertyName?: (propertyName: string) => string
+  strict?: boolean
 }
 
 export type SerializableMetadata = {
@@ -40,6 +41,7 @@ export default function Serializable(
         className: String(context.name),
         formatPropertyName:
           params.formatPropertyName ?? inherited?.formatPropertyName,
+        strict: params.strict ?? inherited?.strict,
       }
       return
     }
@@ -52,6 +54,7 @@ export default function Serializable(
       className: target.name,
       formatPropertyName:
         params.formatPropertyName ?? inherited?.formatPropertyName,
+      strict: params.strict ?? inherited?.strict,
     }
 
     Reflect.defineMetadata(
