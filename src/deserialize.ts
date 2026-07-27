@@ -50,14 +50,24 @@ export default function deserialize<T, U extends Array<unknown>>(
 
   const processedProperties = Object.entries(propsMetadata).map(
     ([propName, propParams]) =>
-      buildPropertyPipe(propParams).run({
-        jsonObject,
-        propName,
-        propParams,
-        serializableClass,
-        instance: resultClass as object,
-        value: undefined,
-      })
+      new Pipe<PropertyContext>()
+        .add(resolveJsonValue)
+        .addIf(propParams.required, assertRequiredValue)
+        .add(
+          propParams.deserialize
+            ? applyCustomDeserialize
+            : applyDefaultDeserialize
+        )
+        .addIf(propParams.validate, assertValidValue)
+        .add(assignToInstance)
+        .run({
+          jsonObject,
+          propName,
+          propParams,
+          serializableClass,
+          instance: resultClass as object,
+          value: undefined,
+        })
   )
 
   processedProperties
@@ -71,19 +81,6 @@ export default function deserialize<T, U extends Array<unknown>>(
     })
 
   return resultClass
-}
-
-function buildPropertyPipe(
-  propParams: JsonPropertyMetadata
-): Pipe<PropertyContext> {
-  return new Pipe<PropertyContext>()
-    .add(resolveJsonValue)
-    .addIf(propParams.required, assertRequiredValue)
-    .add(
-      propParams.deserialize ? applyCustomDeserialize : applyDefaultDeserialize
-    )
-    .addIf(propParams.validate, assertValidValue)
-    .add(assignToInstance)
 }
 
 const resolveJsonValue: PipeStep<PropertyContext> = (context) => ({
