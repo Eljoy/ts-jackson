@@ -1,9 +1,12 @@
 export {
+  isTsJacksonError,
   RequiredPropertyError,
   SerializableError,
+  TsJacksonError,
   TypeMismatchError,
   ValidatePropertyError,
 } from './src/common/errors'
+export type { ErrorKind } from './src/common/errors'
 export { default as deserialize } from './src/deserialize'
 export { default as deserializeArray } from './src/deserializeArray'
 export { default as JsonProperty } from './src/JsonProperty'

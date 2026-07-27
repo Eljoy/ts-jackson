@@ -56,7 +56,7 @@ describe('Maps and dictionaries', () => {
 
     test('non-object json for a Map property throws', () => {
       expect(() => deserialize({ imagesBySize: [1, 2] }, Gallery)).toThrow(
-        /imagesBySize.*Map.*object/i
+        /imagesBySize.*Map.*array/i
       )
     })
   })

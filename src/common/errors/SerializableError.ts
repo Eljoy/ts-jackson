@@ -1,9 +1,12 @@
-import Serializable from '../../Serializable'
+import TsJacksonError from './TsJacksonError'
 
-export default class SerializableError extends Error {
+export default class SerializableError extends TsJacksonError {
+  readonly kind = 'not-serializable' as const
+  readonly className: string
+
   constructor(target: (new (...args) => unknown) | Function) {
-    super()
+    super(`${target.name} class should annotated with @Serializable decorator`)
     this.name = 'SerializableError'
-    this.message = `${target.name} class should annotated with @${Serializable.name} decorator`
+    this.className = target.name
   }
 }

@@ -15,6 +15,7 @@ import {
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
+  TypeMismatchError,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
@@ -285,9 +286,11 @@ function assertIsArray(
   propName?: string
 ): asserts value is unknown[] {
   if (!Array.isArray(value)) {
-    throw new TypeError(
-      `ts-jackson: property '${propName}' is typed as ${typeName} and expects an array json value, but received ${typeof value}`
-    )
+    throw new TypeMismatchError({
+      propName,
+      propValue: value,
+      expected: typeName,
+    })
   }
 }
 
@@ -297,10 +300,10 @@ function assertIsObject(
   propName?: string
 ): asserts value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new TypeError(
-      `ts-jackson: property '${propName}' is typed as ${typeName} and expects an object json value, but received ${
-        Array.isArray(value) ? 'array' : typeof value
-      }`
-    )
+    throw new TypeMismatchError({
+      propName,
+      propValue: value,
+      expected: typeName,
+    })
   }
 }

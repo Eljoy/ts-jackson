@@ -29,7 +29,7 @@ describe('Malformed input', () => {
     }
 
     expect(() => deserialize({ images: 42 }, Playlist)).toThrow(
-      /images.*array.*number/i
+      /images.*Set.*number/i
     )
   })
 
