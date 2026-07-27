@@ -5,10 +5,23 @@ import set from 'lodash/set'
 import {
   assertSerializable,
   checkSerializable,
+  getClassMetadata,
+  getEffectivePath,
+  Pipe,
+  PipeStep,
   ReflectMetaDataKeys,
   Types,
 } from './common'
 import { JsonPropertyMetadata } from './JsonProperty'
+
+type PropertyContext = {
+  json: Record<string, unknown>
+  propName: string
+  propParams: JsonPropertyMetadata
+  instance: object
+  value: unknown
+  type?: JsonPropertyMetadata['type']
+}
 
 /**
  * Function to serialize Serializable class to json
@@ -19,41 +32,99 @@ import { JsonPropertyMetadata } from './JsonProperty'
 export default function serialize<T extends new (...args) => unknown>(
   instance: InstanceType<T>
 ): Record<string, unknown> {
+  return serializeInternal(instance)
+}
+
+export function serializeInternal<T extends new (...args) => unknown>(
+  instance: InstanceType<T>,
+  onPropertyError?: (error: Error) => void
+): Record<string, unknown> {
   assertSerializable(instance.constructor)
-  const propsMetadata: Record<
-    string,
-    JsonPropertyMetadata
-  > = Reflect.getMetadata(
-    ReflectMetaDataKeys.TsJacksonJsonProperty,
-    instance.constructor
-  )
+  const propsMetadata =
+    getClassMetadata<Record<string, JsonPropertyMetadata>>(
+      ReflectMetaDataKeys.TsJacksonJsonProperty,
+      instance.constructor
+    ) || {}
   const json = {}
-  for (const [propName, propParams] of Object.entries(propsMetadata)) {
-    let propertyValue, type
-    if (propParams.beforeSerialize) {
-      propertyValue = propParams.beforeSerialize(instance[propName])
-      type = propertyValue.constructor
-    } else {
-      propertyValue = instance[propName]
-      type = propParams.type
+  Object.entries(propsMetadata).forEach(([propName, propParams]) => {
+    const runPipe = () =>
+      new Pipe<PropertyContext>()
+        .add(resolveInstanceValue)
+        .addIf(propParams.beforeSerialize, applyBeforeSerialize)
+        .add(
+          propParams.serialize ? applyCustomSerialize : applyDefaultSerialize
+        )
+        .addIf(propParams.afterSerialize, applyAfterSerialize)
+        .add(writeToJson)
+        .run({
+          json,
+          propName,
+          propParams,
+          instance: instance as object,
+          value: undefined,
+        })
+    if (!onPropertyError) {
+      runPipe()
+      return
     }
-    const serializedProperty = propParams.serialize
-      ? propParams.serialize(propertyValue)
-      : serializeProperty(propertyValue, type)
-    if (propParams.paths) {
-      propParams.paths.forEach((path, i) => {
-        set(json, path, serializedProperty[i])
-      })
-    } else {
-      set(json, propParams.path, serializedProperty)
+    try {
+      runPipe()
+    } catch (error) {
+      onPropertyError(error as Error)
     }
-  }
+  })
   return json
 }
 
+const resolveInstanceValue: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.instance[context.propName],
+  type: context.propParams.type,
+})
+
+const applyBeforeSerialize: PipeStep<PropertyContext> = (context) => {
+  const value = context.propParams.beforeSerialize(context.value)
+  return { ...context, value, type: value?.constructor }
+}
+
+const applyCustomSerialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.serialize(context.value),
+})
+
+const applyDefaultSerialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: serializeProperty(context.value, context.type),
+})
+
+const applyAfterSerialize: PipeStep<PropertyContext> = (context) => ({
+  ...context,
+  value: context.propParams.afterSerialize(context.value),
+})
+
+const writeToJson: PipeStep<PropertyContext> = (context) => {
+  if (context.propParams.paths) {
+    context.propParams.paths.forEach((path, index) => {
+      set(context.json, path, (context.value as unknown[])[index])
+    })
+  } else {
+    set(
+      context.json,
+      getEffectivePath(context.propParams, context.instance.constructor),
+      context.value
+    )
+  }
+  return context
+}
+
 function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
-  if (value === undefined) {
+  if (value === undefined || value === null) {
     return value
+  }
+  if (type === undefined) {
+    return checkSerializable((value as object).constructor)
+      ? serialize(value as Record<string, unknown>)
+      : value
   }
   if (Array.isArray(type)) {
     return type.map((toTypeItem, index) => {
@@ -66,10 +137,27 @@ function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
       case Types.Array: {
         return Array.from(
           (value as Set<unknown> | Array<unknown>).values()
-        ).map((item) => {
-          const isSerializable = checkSerializable(item.constructor)
-          return isSerializable ? serialize(item) : item
+        ).map((item) => serializeItem(item))
+      }
+      case Types.Map: {
+        const result: Record<string, unknown> = {}
+        ;(value as Map<unknown, unknown>).forEach((item, key) => {
+          result[String(key)] = serializeItem(item)
         })
+        return result
+      }
+      case Types.Object: {
+        if (checkSerializable((value as object).constructor)) {
+          return serialize(value as Record<string, unknown>)
+        }
+        if (typeof value !== 'object' || value.constructor !== Object) {
+          return value
+        }
+        const result: Record<string, unknown> = {}
+        for (const [key, item] of Object.entries(value)) {
+          result[key] = serializeItem(item)
+        }
+        return result
       }
       default: {
         const isSerializable = checkSerializable(type)
@@ -79,4 +167,10 @@ function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
       }
     }
   }
+}
+
+function serializeItem(item: unknown) {
+  return checkSerializable((item as object)?.constructor)
+    ? serialize(item as Record<string, unknown>)
+    : item
 }
