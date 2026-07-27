@@ -1,3 +1,4 @@
+import getClassMetadata from './getClassMetadata'
 import { ReflectMetaDataKeys } from './ReflectMetaDataKeys'
 
 export default function checkSerializable(
@@ -6,9 +7,8 @@ export default function checkSerializable(
   if (!target) {
     return false
   }
-  const options = Reflect.getMetadata(
-    ReflectMetaDataKeys.TsJacksonSerializable,
-    target
+  return (
+    getClassMetadata(ReflectMetaDataKeys.TsJacksonSerializable, target) !==
+    undefined
   )
-  return options !== undefined
 }

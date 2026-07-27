@@ -5,6 +5,7 @@ import set from 'lodash/set'
 import {
   assertSerializable,
   checkSerializable,
+  getClassMetadata,
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
@@ -31,8 +32,8 @@ export default function serialize<T extends new (...args) => unknown>(
   instance: InstanceType<T>
 ): Record<string, unknown> {
   assertSerializable(instance.constructor)
-  const propsMetadata: Record<string, JsonPropertyMetadata> =
-    Reflect.getMetadata(
+  const propsMetadata =
+    getClassMetadata<Record<string, JsonPropertyMetadata>>(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       instance.constructor
     ) || {}
@@ -95,6 +96,11 @@ const writeToJson: PipeStep<PropertyContext> = (context) => {
 function serializeProperty(value: unknown, type: JsonPropertyMetadata['type']) {
   if (value === undefined || value === null) {
     return value
+  }
+  if (type === undefined) {
+    return checkSerializable((value as object).constructor)
+      ? serialize(value as Record<string, unknown>)
+      : value
   }
   if (Array.isArray(type)) {
     return type.map((toTypeItem, index) => {

@@ -9,6 +9,7 @@ import {
   assertSerializable,
   assertValid,
   checkSerializable,
+  getClassMetadata,
   Pipe,
   PipeStep,
   ReflectMetaDataKeys,
@@ -40,8 +41,8 @@ export default function deserialize<T, U extends Array<unknown>>(
   ...args: U
 ): T {
   assertSerializable(serializableClass)
-  const propsMetadata: Record<string, JsonPropertyMetadata> =
-    Reflect.getMetadata(
+  const propsMetadata =
+    getClassMetadata<Record<string, JsonPropertyMetadata>>(
       ReflectMetaDataKeys.TsJacksonJsonProperty,
       serializableClass
     ) || {}

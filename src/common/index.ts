@@ -1,5 +1,6 @@
 export * from './asserts'
 export { default as checkSerializable } from './checkSerializable'
+export { default as getClassMetadata } from './getClassMetadata'
 export { default as Pipe } from './Pipe'
 export type { PipeStep } from './Pipe'
 export * from './errors'

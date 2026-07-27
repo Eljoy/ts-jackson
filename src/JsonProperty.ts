@@ -30,6 +30,9 @@ export type JsonPropertyMetadata<P = any> = {
   path: string
 } & Params<P>
 
+type JsonPropertyDecorator = ((target: Object, propertyName: string) => void) &
+  ((value: undefined, context: ClassFieldDecoratorContext) => void)
+
 /**
  * Decorator for collecting annotated property metadata.
  * Accepts a string, array of strings, or a Params object.
@@ -38,8 +41,11 @@ export type JsonPropertyMetadata<P = any> = {
  */
 export default function JsonProperty<P = unknown>(
   arg: Params<P> | string | string[] = {}
-): (target: Object, propertyName: string) => void {
-  return function (target, propertyName) {
+): JsonPropertyDecorator {
+  return function (
+    target: Object | undefined,
+    propertyNameOrContext: string | ClassFieldDecoratorContext
+  ): void {
     let params: Params<P> =
       typeof arg === 'string'
         ? { path: arg }
@@ -47,6 +53,33 @@ export default function JsonProperty<P = unknown>(
           ? { paths: arg }
           : arg
 
+    if (typeof propertyNameOrContext === 'object') {
+      const context = propertyNameOrContext
+      const propertyName = String(context.name)
+      const metadata: JsonPropertyMetadata<P> = {
+        name: propertyName,
+        path: params.path || propertyName,
+        ...params,
+        type: params.type ?? (params.elementType ? (Array as any) : undefined),
+      }
+
+      const store = context.metadata as Record<
+        string,
+        Record<string, JsonPropertyMetadata<P>>
+      >
+      const existingMetadata = Object.prototype.hasOwnProperty.call(
+        store,
+        ReflectMetaDataKeys.TsJacksonJsonProperty
+      )
+        ? store[ReflectMetaDataKeys.TsJacksonJsonProperty]
+        : { ...store[ReflectMetaDataKeys.TsJacksonJsonProperty] }
+
+      existingMetadata[propertyName] = metadata
+      store[ReflectMetaDataKeys.TsJacksonJsonProperty] = existingMetadata
+      return
+    }
+
+    const propertyName = propertyNameOrContext
     const metadata: JsonPropertyMetadata<P> = {
       name: propertyName,
       path: params.path || propertyName,
@@ -75,5 +108,5 @@ export default function JsonProperty<P = unknown>(
       existingMetadata,
       target.constructor
     )
-  }
+  } as JsonPropertyDecorator
 }
