@@ -98,5 +98,8 @@
       "prettier --write",
       "eslint --fix"
     ]
+  },
+  "overrides": {
+    "js-yaml": "^5.4.1"
   }
 }
