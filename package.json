@@ -77,6 +77,8 @@
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@swc/core": "^1.16.2",
+    "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.24",
     "eslint": "^10.8.0",

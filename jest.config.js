@@ -14,6 +14,29 @@ module.exports = {
       ],
     },
     {
+      displayName: 'swc-legacy-decorators',
+      testEnvironment: 'node',
+      clearMocks: true,
+      testMatch: ['**/*.test.ts?(x)'],
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '/dist/',
+        'standardDecorators.test.ts',
+      ],
+      transform: {
+        '^.+\\.tsx?$': [
+          '@swc/jest',
+          {
+            jsc: {
+              parser: { syntax: 'typescript', decorators: true },
+              transform: { legacyDecorator: true, decoratorMetadata: true },
+              target: 'es2020',
+            },
+          },
+        ],
+      },
+    },
+    {
       displayName: 'standard-decorators',
       testEnvironment: 'node',
       clearMocks: true,
